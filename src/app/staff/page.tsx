@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import { DailyRosterView, QuickWalkinModal } from '@/components/staff';
-import { RosterSlotBooking } from '@/components/staff/types';
 import { Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function StaffPortalPage() {
   const [rosterData, setRosterData] = React.useState<any>(null);
@@ -28,6 +28,33 @@ export default function StaffPortalPage() {
 
   React.useEffect(() => {
     fetchRoster();
+  }, [fetchRoster]);
+
+  // Realtime Supabase Subscription for live roster updates
+  React.useEffect(() => {
+    try {
+      const supabase = createClient();
+      const channel = supabase
+        .channel('staff-roster-live')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'appointments',
+          },
+          () => {
+            fetchRoster();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (err) {
+      console.warn('Staff roster realtime skipped:', err);
+    }
   }, [fetchRoster]);
 
   const handleUpdateStatus = async (appointmentId: string, status: 'IN_PROGRESS' | 'COMPLETED') => {

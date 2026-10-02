@@ -7,6 +7,7 @@ import { DigitalPassCard } from '@/components/appointments';
 import { AppointmentPassData } from '@/components/appointments/types';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button, CalendarPicker, TimeSlotGrid, Modal, SlotItem } from '@/components/core';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AppointmentPassPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -43,6 +44,37 @@ export default function AppointmentPassPage({ params }: { params: { id: string }
   React.useEffect(() => {
     fetchPass();
   }, [fetchPass]);
+
+  // Realtime Supabase Subscription for instant status updates
+  React.useEffect(() => {
+    if (!params.id) return;
+    try {
+      const supabase = createClient();
+      const channel = supabase
+        .channel(`pass-live-${params.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'appointments',
+            filter: `id=eq.${params.id}`,
+          },
+          (payload: any) => {
+            if (payload.new && payload.new.status) {
+              setPass((prev) => (prev ? { ...prev, status: payload.new.status } : null));
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (err) {
+      console.warn('Realtime channel subscription skipped:', err);
+    }
+  }, [params.id]);
 
   // Set default reschedule date when modal opens
   React.useEffect(() => {
