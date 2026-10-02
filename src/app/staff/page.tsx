@@ -1,0 +1,105 @@
+'use client';
+
+import * as React from 'react';
+import { DailyRosterView, QuickWalkinModal } from '@/components/staff';
+import { RosterSlotBooking } from '@/components/staff/types';
+import { Loader2 } from 'lucide-react';
+
+export default function StaffPortalPage() {
+  const [rosterData, setRosterData] = React.useState<any>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isQuickBookOpen, setIsQuickBookOpen] = React.useState(false);
+
+  const fetchRoster = React.useCallback(async () => {
+    try {
+      const res = await fetch('/api/staff/roster');
+      if (res.status === 401 || res.status === 403) {
+        window.location.href = '/login';
+        return;
+      }
+      const data = await res.json();
+      setRosterData(data);
+    } catch (err) {
+      console.error('Error fetching roster:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchRoster();
+  }, [fetchRoster]);
+
+  const handleUpdateStatus = async (appointmentId: string, status: 'IN_PROGRESS' | 'COMPLETED') => {
+    try {
+      const res = await fetch('/api/staff/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId, status }),
+      });
+      if (res.ok) {
+        fetchRoster();
+      } else {
+        alert('Failed to update status');
+      }
+    } catch {
+      alert('Error updating appointment status');
+    }
+  };
+
+  const handleQuickBook = async (input: any) => {
+    try {
+      const res = await fetch('/api/staff/quick-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      if (res.ok) {
+        alert('Walk-in booking locked successfully!');
+        fetchRoster();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to book walk-in');
+      }
+    } catch {
+      alert('Error booking walk-in appointment');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white py-10">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-6">
+        <DailyRosterView
+          stylistName={rosterData?.stylistName || 'Rahul Mehta'}
+          chairName={rosterData?.chairName || 'Chair 03'}
+          dateFormatted={rosterData?.dateFormatted || 'Today'}
+          bookings={rosterData?.bookings || []}
+          onOpenQuickBook={() => setIsQuickBookOpen(true)}
+          onUpdateStatus={handleUpdateStatus}
+        />
+
+        <QuickWalkinModal
+          isOpen={isQuickBookOpen}
+          onClose={() => setIsQuickBookOpen(false)}
+          storeId="althan-store"
+          staffId="staff-id"
+          stylistName={rosterData?.stylistName || 'Rahul Mehta'}
+          services={[
+            { id: 'srv-1', title: 'Signature Precision Haircut', price: 850, durationMinutes: 45 },
+            { id: 'srv-2', title: 'Classic Hot Towel Shave', price: 450, durationMinutes: 30 },
+            { id: 'srv-3', title: 'Botanical Scalp & Hair Spa', price: 1600, durationMinutes: 60 },
+          ]}
+          onSubmit={handleQuickBook}
+        />
+      </div>
+    </div>
+  );
+}
