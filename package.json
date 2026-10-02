@@ -16,6 +16,7 @@
     "test": "playwright test",
     "test:workflows": "tsx tests/test_workflows.ts",
     "test:edge-cases": "tsx tests/test_edge_cases.ts",
+    "test:live": "tsx tests/test_live_prod.ts",
     "test:all": "playwright test && tsx tests/test_workflows.ts && tsx tests/test_edge_cases.ts"
   },
   "dependencies": {
