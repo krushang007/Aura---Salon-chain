@@ -12,8 +12,11 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "test:e2e": "tsx tests/e2e.ts",
-    "test:playwright": "playwright test"
+    "test:playwright": "playwright test",
+    "test": "playwright test",
+    "test:workflows": "tsx tests/test_workflows.ts",
+    "test:edge-cases": "tsx tests/test_edge_cases.ts",
+    "test:all": "playwright test && tsx tests/test_workflows.ts && tsx tests/test_edge_cases.ts"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.7",
