@@ -52,7 +52,10 @@ export async function middleware(request: NextRequest) {
     // Check if return redirect is specified
     const redirectParam = request.nextUrl.searchParams.get('redirect') || request.nextUrl.searchParams.get('next');
     if (redirectParam && redirectParam.startsWith('/') && redirectParam !== '/login') {
-      return NextResponse.redirect(new URL(redirectParam, request.url));
+      const url = request.nextUrl.clone();
+      url.pathname = redirectParam;
+      url.search = '';
+      return NextResponse.redirect(url);
     }
 
     // Decode aura session payload if available to determine role
@@ -62,16 +65,25 @@ export async function middleware(request: NextRequest) {
         if (parts.length === 3) {
           const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
           if (payload.role === 'TENANT_ADMIN') {
-            return NextResponse.redirect(new URL('/admin', request.url));
+            const url = request.nextUrl.clone();
+            url.pathname = '/admin';
+            url.search = '';
+            return NextResponse.redirect(url);
           }
           if (payload.role === 'STAFF') {
-            return NextResponse.redirect(new URL('/staff', request.url));
+            const url = request.nextUrl.clone();
+            url.pathname = '/staff';
+            url.search = '';
+            return NextResponse.redirect(url);
           }
         }
       } catch {}
     }
 
-    return NextResponse.redirect(new URL('/appointments', request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = '/appointments';
+    url.search = '';
+    return NextResponse.redirect(url);
   }
 
   return response;

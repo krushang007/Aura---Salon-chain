@@ -83,7 +83,7 @@ export function AddStaffModal({
       `Aura Staff Login:
 Email: ${createdCredentials.email}
 Password: ${createdCredentials.pass}
-Login URL: http://localhost:3000/login`
+Login URL: ${typeof window !== 'undefined' ? window.location.origin : ''}/login`
     );
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
