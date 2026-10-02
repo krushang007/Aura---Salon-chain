@@ -78,7 +78,7 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="font-display text-xl font-bold text-neutral-900">4. Your Rights & Deletion</h2>
           <p>
-            You retain full ownership of your data. You may inspect or update your profile details at any time from your account settings. For full account deletion or data export requests, please contact our concierge desk at <a href="mailto:privacy@aurasalon.in" className="text-neutral-900 font-semibold underline">privacy@aurasalon.in</a>.
+            You retain full ownership of your data. You may inspect or update your profile details at any time from your account settings. For full account deletion or data export requests, please contact our concierge desk at <a href="mailto:privacy@kaibuild.space" className="text-neutral-900 font-semibold underline">privacy@kaibuild.space</a>.
           </p>
         </section>
       </article>

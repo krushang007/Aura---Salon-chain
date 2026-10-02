@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
             <Input
               label="Registered Email"
               type="email"
-              placeholder="sarah@example.com"
+              placeholder="contact@kaibuild.space"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -87,9 +87,7 @@ export default function ForgotPasswordPage() {
         <div className="border-t border-neutral-100 pt-4 text-center">
           <p className="text-xs text-neutral-400">
             Stylist or Salon Admin with urgent salon floor access?{" "}
-            <a href="tel:+912614890129" className="text-neutral-700 font-semibold hover:underline">
-              Contact Desk Concierge
-            </a>
+            <a href="tel:+912614890129" className="text-neutral-700 font-semibold hover:underline">Contact Desk Concierge</a> or email <a href="mailto:admin@kaibuild.space" className="text-neutral-700 font-semibold hover:underline">admin@kaibuild.space</a>
           </p>
         </div>
       </div>

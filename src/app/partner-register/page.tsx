@@ -113,7 +113,7 @@ export default function PartnerRegisterPage() {
                   <Input
                     label="Business Email"
                     type="email"
-                    placeholder="contact@belleza.com"
+                    placeholder="contact@kaibuild.space"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -245,6 +245,7 @@ export default function PartnerRegisterPage() {
             <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-center space-y-2">
               <p className="text-xs text-neutral-400">Need personalized enterprise onboarding?</p>
               <p className="text-sm font-semibold text-neutral-900">Call Concierge: +91 261 489 0129</p>
+              <p className="text-xs text-neutral-500 font-medium">Or email: <a href="mailto:sales@kaibuild.space" className="underline text-neutral-800">sales@kaibuild.space</a></p>
             </div>
           </div>
         </div>

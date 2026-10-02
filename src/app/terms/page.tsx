@@ -79,7 +79,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="font-display text-xl font-bold text-neutral-900">6. Contact & Dispute Resolution</h2>
           <p>
-            For inquiries or dispute assistance regarding any salon booking in Surat, please reach out to our platform support team at <a href="mailto:support@aurasalon.in" className="text-neutral-900 font-semibold underline">support@aurasalon.in</a>.
+            For inquiries or dispute assistance regarding any salon booking in Surat, please reach out to our platform support team at <a href="mailto:support@kaibuild.space" className="text-neutral-900 font-semibold underline">support@kaibuild.space</a>.
           </p>
         </section>
       </article>

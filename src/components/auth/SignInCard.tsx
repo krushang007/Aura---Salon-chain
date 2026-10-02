@@ -123,7 +123,7 @@ export function SignInCard({ onSubmit, isLoading = false, errorMessage, redirect
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="sarah@example.com"
+              placeholder="contact@kaibuild.space"
               required
               autoComplete="email"
             />

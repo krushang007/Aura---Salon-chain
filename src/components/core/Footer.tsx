@@ -31,7 +31,10 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-neutral-100 pt-6 text-center text-xs text-neutral-400">
+        <div className="mt-8 border-t border-neutral-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400">
+          <div>
+            Contact: <a href="mailto:contact@kaibuild.space" className="text-neutral-600 hover:text-neutral-900 underline">contact@kaibuild.space</a> | Sales: <a href="mailto:sales@kaibuild.space" className="text-neutral-600 hover:text-neutral-900 underline">sales@kaibuild.space</a>
+          </div>
           © {new Date().getFullYear()} Aura Technologies, Inc. All rights reserved. Zero calendar invites. Strictly in-app appointments.
         </div>
       </div>

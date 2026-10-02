@@ -185,6 +185,17 @@ export default function HelpPage() {
 
         {/* Salon Desk Support Contacts Card */}
         <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200/80 pb-4">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-neutral-400 font-semibold">Central Support & Enquiries</p>
+              <p className="text-sm font-bold text-neutral-900">
+                General: <a href="mailto:contact@kaibuild.space" className="text-neutral-900 underline">contact@kaibuild.space</a> | Support: <a href="mailto:info@kaibuild.space" className="text-neutral-900 underline">info@kaibuild.space</a>
+              </p>
+            </div>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 self-start sm:self-auto">
+              24/7 Desk Active
+            </span>
+          </div>
           <div className="space-y-1">
             <h3 className="font-display text-lg font-bold text-neutral-900">
               Surat Outlet Desk Concierge
