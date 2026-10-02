@@ -18,6 +18,8 @@ export interface QuickWalkinInput {
   serviceId: string;
   customerFullName: string;
   customerPhone: string;
+  customerEmail?: string;
+  customerId?: string;
   startTime: string; // ISO
   customerNotes?: string;
 }

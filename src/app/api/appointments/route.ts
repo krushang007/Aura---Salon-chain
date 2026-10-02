@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { appointments, stores, services, staffProfiles, users } from '@/db/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET() {
@@ -12,25 +12,64 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const list = await db.query.appointments.findMany({
-      where: eq(appointments.customerId, user.id),
-      with: {
-        store: true,
-        service: true,
-        staff: {
+    let list: any[] = [];
+
+    if (user.role === 'STAFF') {
+      const staff = await db.query.staffProfiles.findFirst({
+        where: eq(staffProfiles.userId, user.id),
+      });
+
+      if (staff) {
+        list = await db.query.appointments.findMany({
+          where: eq(appointments.staffId, staff.id),
           with: {
-            user: true,
+            store: true,
+            service: true,
+            staff: {
+              with: {
+                user: true,
+              },
+            },
+          },
+          orderBy: [desc(appointments.createdAt)],
+        });
+      }
+    } else if (user.role === 'TENANT_ADMIN' && user.tenantId) {
+      list = await db.query.appointments.findMany({
+        where: eq(appointments.tenantId, user.tenantId),
+        with: {
+          store: true,
+          service: true,
+          staff: {
+            with: {
+              user: true,
+            },
           },
         },
-      },
-      orderBy: [desc(appointments.createdAt)],
-    });
+        orderBy: [desc(appointments.createdAt)],
+      });
+    } else {
+      // Default: CUSTOMER
+      list = await db.query.appointments.findMany({
+        where: eq(appointments.customerId, user.id),
+        with: {
+          store: true,
+          service: true,
+          staff: {
+            with: {
+              user: true,
+            },
+          },
+        },
+        orderBy: [desc(appointments.createdAt)],
+      });
+    }
 
     const now = new Date();
 
     const formatted = await Promise.all(
       list.map(async (apt) => {
-        const match = apt.slotRange.match(/\["([^"]+)",\s*"([^"]+)"\)/);
+        const match = apt.slotRange.match(/\["([^"]+)",\s*"([^"]+)"/);
         const startIso = match ? match[1] : apt.createdAt.toISOString();
         const startDate = new Date(startIso);
 

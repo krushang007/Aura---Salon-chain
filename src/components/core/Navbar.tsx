@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import { Bell, LogOut, User } from 'lucide-react';
+import { Bell, LogOut, User, Scissors, Shield } from 'lucide-react';
 import { Button } from './Button';
 
 export interface NavbarProps {
@@ -21,10 +21,24 @@ export interface NavbarProps {
 
 export function Navbar({ user, unreadNotificationsCount: initialUnread = 0, onSignOut }: NavbarProps) {
   const pathname = usePathname();
+  const [currentUser, setCurrentUser] = React.useState(user);
   const [unreadCount, setUnreadCount] = React.useState(initialUnread);
 
+  // Sync client-side session on route changes or mount
   React.useEffect(() => {
-    if (user) {
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          setCurrentUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, [pathname]);
+
+  // Fetch unread notifications count
+  React.useEffect(() => {
+    if (currentUser) {
       fetch('/api/notifications')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
@@ -34,7 +48,7 @@ export function Navbar({ user, unreadNotificationsCount: initialUnread = 0, onSi
         })
         .catch(() => {});
     }
-  }, [user, pathname]);
+  }, [currentUser, pathname]);
 
   const handleLogout = async () => {
     if (onSignOut) {
@@ -55,19 +69,36 @@ export function Navbar({ user, unreadNotificationsCount: initialUnread = 0, onSi
     window.location.href = '/login';
   };
 
+  // Determine effective operational role
+  const isStaffRoute = pathname.startsWith('/staff');
+  const isAdminRoute = pathname.startsWith('/admin');
+
+  let effectiveRole = currentUser?.role;
+  if (!effectiveRole) {
+    if (isStaffRoute) effectiveRole = 'STAFF';
+    else if (isAdminRoute) effectiveRole = 'TENANT_ADMIN';
+    else effectiveRole = 'CUSTOMER';
+  }
+
+  // Brand Logo URL
+  const homeHref = effectiveRole === 'STAFF' ? '/staff' : effectiveRole === 'TENANT_ADMIN' ? '/admin' : '/';
+
+  // Navigation Links strictly tailored to User Journey
   let navLinks: { href: string; label: string }[] = [];
-  if (user?.role === 'TENANT_ADMIN') {
+  if (effectiveRole === 'STAFF' || isStaffRoute) {
+    navLinks = [
+      { href: '/staff', label: 'Stylist Daily Roster' },
+      { href: '/appointments', label: 'Appointments Queue' },
+    ];
+  } else if (effectiveRole === 'TENANT_ADMIN' || isAdminRoute) {
     navLinks = [
       { href: '/admin', label: 'Operations & Analytics' },
       { href: '/admin#staff', label: 'Staff Roster' },
       { href: '/admin#outlets', label: 'Outlets & Chairs' },
-    ];
-  } else if (user?.role === 'STAFF') {
-    navLinks = [
-      { href: '/staff', label: 'Stylist Roster' },
-      { href: '/appointments', label: 'Appointments' },
+      { href: '/appointments', label: 'Master Bookings' },
     ];
   } else {
+    // End Customers
     navLinks = [
       { href: '/', label: 'Explore Salons' },
       { href: '/appointments', label: 'My Appointments' },
@@ -78,14 +109,24 @@ export function Navbar({ user, unreadNotificationsCount: initialUnread = 0, onSi
     <header className="sticky top-0 z-40 w-full border-b border-neutral-200/80 bg-white/95 backdrop-blur-xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand */}
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link href={homeHref} className="flex items-center gap-2">
             <span className="font-display text-xl font-bold tracking-tight text-neutral-950">
               Aura
             </span>
-            <span className="hidden sm:inline-block rounded-md bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600">
-              Surat Marketplace
-            </span>
+            {effectiveRole === 'STAFF' ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[11px] font-bold text-amber-800">
+                <Scissors className="h-3 w-3" /> Stylist Terminal
+              </span>
+            ) : effectiveRole === 'TENANT_ADMIN' ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-neutral-900 px-2 py-0.5 text-[11px] font-bold text-white">
+                <Shield className="h-3 w-3" /> Salon Admin
+              </span>
+            ) : (
+              <span className="hidden sm:inline-block rounded-md bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600">
+                Surat Marketplace
+              </span>
+            )}
           </Link>
         </div>
 
@@ -110,7 +151,7 @@ export function Navbar({ user, unreadNotificationsCount: initialUnread = 0, onSi
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
-          {user ? (
+          {currentUser ? (
             <div className="flex items-center gap-3">
               {/* Notification icon */}
               <Link
@@ -121,51 +162,46 @@ export function Navbar({ user, unreadNotificationsCount: initialUnread = 0, onSi
               >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                  <span className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </Link>
 
-              {/* User Avatar + Profile Link */}
+              {/* Profile Link */}
               <Link
                 href="/profile"
-                id="navbar-profile-link"
-                className="flex items-center gap-2.5 rounded-xl border border-transparent p-1.5 hover:border-neutral-200 hover:bg-neutral-50 transition-colors"
-                title="View & Edit Profile"
+                id="navbar-profile-btn"
+                className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 transition-colors shadow-2xs"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-900 text-xs font-semibold text-white">
-                  {user.fullName ? user.fullName.slice(0, 2).toUpperCase() : 'US'}
-                </div>
-                <div className="hidden lg:block text-left">
-                  <p className="text-xs font-semibold text-neutral-900 leading-tight">
-                    {user.fullName}
-                  </p>
-                  <p className="text-[10px] text-neutral-400 capitalize">
-                    {user.role === 'TENANT_ADMIN' ? 'Salon Admin' : user.role.toLowerCase()}
-                  </p>
-                </div>
+                <User className="h-3.5 w-3.5 text-neutral-500" />
+                <span className="max-w-[120px] truncate">
+                  {currentUser.fullName || currentUser.email.split('@')[0]}
+                </span>
               </Link>
 
               {/* Sign Out Button */}
               <button
+                type="button"
                 id="navbar-signout-btn"
                 onClick={handleLogout}
-                className="rounded-md p-1.5 text-neutral-400 hover:text-red-600 transition-colors"
+                className="rounded-lg p-2 text-neutral-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                 title="Sign Out"
+                aria-label="Sign Out"
               >
                 <LogOut className="h-4 w-4" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/register" className="hidden sm:inline-block text-sm font-medium text-neutral-600 hover:text-neutral-900 px-3 py-2">
-                Create Account
-              </Link>
+            <div className="flex items-center gap-3">
               <Link href="/login">
-                <Button size="sm" variant="primary">
+                <Button variant="ghost" size="sm">
                   Sign In
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button variant="primary" size="sm">
+                  Get Started
                 </Button>
               </Link>
             </div>

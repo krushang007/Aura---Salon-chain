@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { tenants, stores, users } from '@/db/schema';
+import { tenants, stores, users, services, staffProfiles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { hashPassword, signSession, getSessionCookieName } from '@/lib/auth';
 import { cookies } from 'next/headers';
@@ -71,6 +71,40 @@ export async function POST(request: Request) {
         isActive: true,
         isPublished: true, // Auto-published upon onboarding
       }).returning();
+
+      // Auto-provision initial standard luxury services
+      const standardServices = [
+        { title: 'Signature Precision Haircut & Styling', category: 'HAIRCUT', durationMinutes: 45, bufferMinutes: 15, price: '850.00', description: 'Tailored consultation, precision shear architecture, wash and styling finish.' },
+        { title: 'Classic Hot Towel Shave & Beard Sculpt', category: 'SHAVE', durationMinutes: 30, bufferMinutes: 10, price: '450.00', description: 'Pre-shave essential oils, multi-pass straight razor finish, cold towel toner.' },
+        { title: 'Balayage & Hair Gloss Treatment', category: 'COLOR', durationMinutes: 90, bufferMinutes: 15, price: '2800.00', description: 'Sun-kissed hand-painted dimension, ammonia-free gloss and fiber seal.' },
+        { title: 'Botanical Scalp & Hair Spa', category: 'SPA', durationMinutes: 60, bufferMinutes: 15, price: '1500.00', description: 'Aromatherapy scalp massage, deep hydration masque, thermal steam infuse.' },
+      ];
+
+      await tx.insert(services).values(
+        standardServices.map((s) => ({
+          tenantId: tenant.id,
+          storeId: store.id,
+          title: s.title,
+          category: s.category as any,
+          durationMinutes: s.durationMinutes,
+          bufferMinutes: s.bufferMinutes,
+          price: s.price,
+          description: s.description,
+          isActive: true,
+        }))
+      );
+
+      // Auto-provision initial master stylist chair
+      await tx.insert(staffProfiles).values({
+        tenantId: tenant.id,
+        userId: adminUser.id,
+        currentStoreId: store.id,
+        title: 'Master Stylist',
+        assignedChair: 1,
+        chairStationName: 'Chair 01',
+        bio: 'Salon Lead Stylist & Precision Cut Expert',
+        isActive: true,
+      });
 
       return { tenant, adminUser, store };
     });

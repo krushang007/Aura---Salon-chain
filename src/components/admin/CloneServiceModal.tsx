@@ -2,13 +2,13 @@
 
 import * as React from 'react';
 import { Modal, Button, Select } from '@/components/core';
-import { Copy, ArrowRight } from 'lucide-react';
+import { Copy, ArrowRight, Sparkles } from 'lucide-react';
 import { CloneServiceInput } from './types';
 
 export interface CloneServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  stores: { id: string; name: string }[];
+  stores: { id: string; name: string; servicesCount?: number }[];
   onClone: (input: CloneServiceInput) => Promise<void>;
   isLoading?: boolean;
 }
@@ -20,15 +20,39 @@ export function CloneServiceModal({
   onClone,
   isLoading = false,
 }: CloneServiceModalProps) {
-  const [sourceStoreId, setSourceStoreId] = React.useState(stores[0]?.id || '');
-  const [targetStoreId, setTargetStoreId] = React.useState(stores[1]?.id || '');
+  const [sourceStoreId, setSourceStoreId] = React.useState('master-catalog');
+  const [targetStoreId, setTargetStoreId] = React.useState('');
+
+  React.useEffect(() => {
+    if (stores.length > 0 && !targetStoreId) {
+      // Pick target store that has least services or first store
+      const emptyStore = stores.find((s) => (s.servicesCount || 0) === 0);
+      setTargetStoreId(emptyStore ? emptyStore.id : stores[0].id);
+    }
+  }, [stores, targetStoreId]);
 
   const handleClone = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (sourceStoreId === targetStoreId) return;
+    if (!targetStoreId) return;
+    if (sourceStoreId !== 'master-catalog' && sourceStoreId === targetStoreId) return;
     await onClone({ sourceStoreId, targetStoreId });
     onClose();
   };
+
+  const sourceOptions = [
+    { value: 'master-catalog', label: '⭐ Aura Master Luxury Catalog (4 standard services)' },
+    ...stores.map((s) => ({
+      value: s.id,
+      label: `${s.name} (${s.servicesCount !== undefined ? s.servicesCount : 0} services)`,
+      disabled: (s.servicesCount || 0) === 0,
+    })),
+  ];
+
+  const targetOptions = stores.map((s) => ({
+    value: s.id,
+    label: `${s.name} (${s.servicesCount !== undefined ? s.servicesCount : 0} existing services)`,
+    disabled: s.id === sourceStoreId,
+  }));
 
   return (
     <Modal
@@ -36,14 +60,14 @@ export function CloneServiceModal({
       onClose={onClose}
       maxWidth="md"
       title="Clone Service Catalog Across Branches"
-      description="Replicate your active haircut, spa, and treatment catalog from a template branch to a new outlet in Surat."
+      description="Replicate your active haircut, spa, and treatment catalog from a template branch or master catalog to any branch outlet in Surat."
     >
       <form onSubmit={handleClone} className="space-y-4 pt-2">
         <Select
-          label="Source Branch (Template)"
+          label="Source Catalog (Template)"
           value={sourceStoreId}
           onChange={(e) => setSourceStoreId(e.target.value)}
-          options={stores.map((s) => ({ value: s.id, label: s.name }))}
+          options={sourceOptions}
         />
 
         <div className="flex justify-center text-neutral-400 py-1">
@@ -51,18 +75,14 @@ export function CloneServiceModal({
         </div>
 
         <Select
-          label="Target Branch (New Outlet)"
+          label="Target Branch (Destination Outlet)"
           value={targetStoreId}
           onChange={(e) => setTargetStoreId(e.target.value)}
-          options={stores.map((s) => ({
-            value: s.id,
-            label: s.name,
-            disabled: s.id === sourceStoreId,
-          }))}
+          options={targetOptions}
         />
 
         <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-600 leading-relaxed">
-          All active services, duration minutes, buffer policies, and price tiers will be duplicated. Existing services in the target branch remain unaffected.
+          All services, duration minutes, buffer policies, and price tiers from the source will be duplicated into the target branch. Existing services in the target branch will remain intact.
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t border-neutral-100 pt-4 mt-6">
@@ -73,7 +93,7 @@ export function CloneServiceModal({
             type="submit"
             variant="primary"
             isLoading={isLoading}
-            disabled={sourceStoreId === targetStoreId}
+            disabled={!targetStoreId || (sourceStoreId !== 'master-catalog' && sourceStoreId === targetStoreId)}
             leftIcon={<Copy className="h-4 w-4" />}
           >
             Clone Catalog

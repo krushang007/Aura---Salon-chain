@@ -7,6 +7,7 @@ import {
   CloneServiceModal,
   AddStoreModal,
   EditStaffModal,
+  EditStoreModal,
 } from '@/components/admin';
 import { StaffMember, ProvisionStaffInput, CloneServiceInput } from '@/components/admin/types';
 import { Button, useToast } from '@/components/core';
@@ -35,6 +36,8 @@ export default function AdminPortalPage() {
   const [isEditStaffOpen, setIsEditStaffOpen] = React.useState(false);
   const [selectedStaffToEdit, setSelectedStaffToEdit] = React.useState<StaffMember | null>(null);
   const [isAddStoreOpen, setIsAddStoreOpen] = React.useState(false);
+  const [isEditStoreOpen, setIsEditStoreOpen] = React.useState(false);
+  const [selectedStoreToEdit, setSelectedStoreToEdit] = React.useState<any>(null);
   const [isCloneModalOpen, setIsCloneModalOpen] = React.useState(false);
 
   const fetchData = React.useCallback(async () => {
@@ -143,6 +146,25 @@ export default function AdminPortalPage() {
     }
   };
 
+  const handleSaveStore = async (data: any) => {
+    try {
+      const res = await fetch('/api/admin/outlets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        toast.success(result.message || 'Store settings updated.', 'Saved');
+        fetchData();
+      } else {
+        toast.error(result.error || 'Failed to update store', 'Update Error');
+      }
+    } catch {
+      toast.error('Network error updating store settings.', 'Network Error');
+    }
+  };
+
   const handleCloneServices = async (input: CloneServiceInput) => {
     if (!input.sourceStoreId || !input.targetStoreId) {
       toast.error('Please select both a source salon and a target salon.', 'Validation');
@@ -157,6 +179,7 @@ export default function AdminPortalPage() {
       const data = await res.json();
       if (res.ok) {
         toast.success(data.message || 'Catalog cloned successfully across branches.', 'Sync Complete');
+        fetchData();
       } else {
         toast.error(data.error || 'Failed to clone service catalog', 'Clone Error');
       }
@@ -324,7 +347,28 @@ export default function AdminPortalPage() {
                     <Armchair className="h-3.5 w-3.5 text-neutral-400" />
                     {st.totalStylingChairs || 5} Physical Chairs
                   </span>
-                  <span className="text-neutral-400 text-[11px]">Direct Capacity</span>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
+                      {(st as any).servicesCount !== undefined ? (st as any).servicesCount : 0} Services
+                    </span>
+                    <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
+                      {(st as any).staffCount !== undefined ? (st as any).staffCount : 0} Stylists
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs font-semibold"
+                    onClick={() => {
+                      setSelectedStoreToEdit(st);
+                      setIsEditStoreOpen(true);
+                    }}
+                  >
+                    Edit Settings & Hours
+                  </Button>
                 </div>
               </div>
             ))}
@@ -374,6 +418,16 @@ export default function AdminPortalPage() {
           onClose={() => setIsCloneModalOpen(false)}
           stores={stores}
           onClone={handleCloneServices}
+        />
+
+        <EditStoreModal
+          isOpen={isEditStoreOpen}
+          onClose={() => {
+            setIsEditStoreOpen(false);
+            setSelectedStoreToEdit(null);
+          }}
+          store={selectedStoreToEdit}
+          onSave={handleSaveStore}
         />
       </div>
     </div>

@@ -4,3 +4,4 @@ export * from './CloneServiceModal';
 export * from './types';
 export * from './AddStoreModal';
 export * from './EditStaffModal';
+export * from './EditStoreModal';

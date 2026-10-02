@@ -93,6 +93,9 @@ async function runTests() {
     // ------------------------------------------------------------------------
     // TEST 4: Double-Booking Prevention & Concurrency Guard
     // ------------------------------------------------------------------------
+    // Clean up any stale test bookings for idempotent runs
+    await db.delete(appointments).where(eq(appointments.customerId, customer!.id));
+
     console.log('\n--- Test Suite 4: PostgreSQL GiST Overlap Guard ---');
     const haircutSrv = await db.query.services.findFirst({
       where: eq(services.storeId, althan!.id),
@@ -139,7 +142,7 @@ async function runTests() {
       customerId: customer!.id,
       bookedByUserId: customer!.id,
       serviceId: haircutSrv!.id,
-      assignedChair: 3,
+      assignedChair: 4,
       slotRange: sql`tstzrange(${imminentStart.toISOString()}, ${imminentEnd.toISOString()}, '[)')`,
       status: 'CONFIRMED',
     }).returning();
