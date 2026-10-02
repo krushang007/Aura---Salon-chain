@@ -13,24 +13,37 @@ export async function POST(request: Request) {
 
     const supabase = createClient();
 
-    if (decision === 'approve') {
-      const { data, error } = await (supabase.auth as any).oauth.approveAuthorization(authorizationId);
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-
-      return NextResponse.redirect(data.redirect_url);
-    } else {
-      const { data, error } = await (supabase.auth as any).oauth.denyAuthorization(authorizationId);
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-
-      return NextResponse.redirect(data.redirect_url);
+    interface OAuthDecisionResponse {
+      data?: { redirect_url: string };
+      error?: { message: string };
     }
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'OAuth decision error' }, { status: 500 });
+
+    const authClient = supabase.auth as unknown as {
+      oauth?: {
+        approveAuthorization: (id: string) => Promise<OAuthDecisionResponse>;
+        denyAuthorization: (id: string) => Promise<OAuthDecisionResponse>;
+      };
+    };
+
+    if (decision === 'approve') {
+      const res = await authClient.oauth?.approveAuthorization(authorizationId);
+
+      if (res?.error || !res?.data) {
+        return NextResponse.json({ error: res?.error?.message || 'Approval failed' }, { status: 400 });
+      }
+
+      return NextResponse.redirect(res.data.redirect_url);
+    } else {
+      const res = await authClient.oauth?.denyAuthorization(authorizationId);
+
+      if (res?.error || !res?.data) {
+        return NextResponse.json({ error: res?.error?.message || 'Denial failed' }, { status: 400 });
+      }
+
+      return NextResponse.redirect(res.data.redirect_url);
+    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'OAuth decision error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

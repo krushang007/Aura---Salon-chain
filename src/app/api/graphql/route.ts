@@ -12,6 +12,9 @@ const { handleRequest } = createYoga({
   schema,
   graphqlEndpoint: '/api/graphql',
   fetchAPI: { Response },
+  // C-4: Disable introspection and GraphiQL in production to prevent schema discovery
+  maskedErrors: process.env.NODE_ENV === 'production',
+  graphiql: process.env.NODE_ENV !== 'production',
   context: async ({ request }) => {
     return createContext(request);
   },

@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { staffProfiles, stores, users } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getCurrentUser, hashPassword } from '@/lib/auth';
+import { validateRequestBody, adminStaffUpdateSchema } from '@/lib/validations';
 
 export async function GET() {
   try {
@@ -65,12 +66,12 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Unauthorized salon admin access' }, { status: 403 });
     }
 
-    const body = await request.json();
-    const { staffId, fullName, title, assignedChair, storeId, newPassword, isActive } = body;
-
-    if (!staffId) {
-      return NextResponse.json({ error: 'Staff ID is required' }, { status: 400 });
+    const validation = await validateRequestBody(request, adminStaffUpdateSchema);
+    if ('error' in validation) {
+      return validation.error;
     }
+
+    const { staffId, fullName, title, assignedChair, storeId, newPassword, isActive } = validation.data;
 
     const existingProfile = await db.query.staffProfiles.findFirst({
       where: and(eq(staffProfiles.id, staffId), eq(staffProfiles.tenantId, user.tenantId)),
@@ -82,20 +83,20 @@ export async function PATCH(request: Request) {
     }
 
     // 1. Update User Record (fullName, optional passwordHash, isActive)
-    const userUpdates: Record<string, any> = { updatedAt: new Date() };
-    if (fullName) userUpdates.fullName = fullName.trim();
+    const userUpdates: Partial<typeof users.$inferInsert> = { updatedAt: new Date() };
+    if (fullName) userUpdates.fullName = fullName;
     if (typeof isActive === 'boolean') userUpdates.isActive = isActive;
-    if (newPassword && String(newPassword).length >= 6) {
-      userUpdates.passwordHash = hashPassword(String(newPassword));
+    if (newPassword && newPassword.length >= 6) {
+      userUpdates.passwordHash = hashPassword(newPassword);
     }
 
     await db.update(users).set(userUpdates).where(eq(users.id, existingProfile.userId));
 
     // 2. Update Staff Profile (title, assignedChair, storeId)
-    const profileUpdates: Record<string, any> = { updatedAt: new Date() };
-    if (title) profileUpdates.title = title.trim();
+    const profileUpdates: Partial<typeof staffProfiles.$inferInsert> = { updatedAt: new Date() };
+    if (title) profileUpdates.title = title;
     if (assignedChair) {
-      profileUpdates.assignedChair = Number(assignedChair);
+      profileUpdates.assignedChair = assignedChair;
       profileUpdates.chairStationName = `Chair ${String(assignedChair).padStart(2, '0')}`;
     }
     if (storeId) profileUpdates.currentStoreId = storeId;
@@ -109,11 +110,11 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Staff profile updated successfully.',
+      message: 'Stylist configuration updated successfully.',
       staff: updatedStaff,
     });
   } catch (error) {
     console.error('Error updating staff member:', error);
-    return NextResponse.json({ error: 'Failed to update staff member' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update stylist configuration' }, { status: 500 });
   }
 }

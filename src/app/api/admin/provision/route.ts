@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { users, staffProfiles, staffShifts, notifications } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { getCurrentUser, hashPassword } from '@/lib/auth';
+import { validateRequestBody, adminProvisionSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
@@ -16,34 +16,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tenant context missing' }, { status: 400 });
     }
 
-    const body = await request.json();
+    const validation = await validateRequestBody(request, adminProvisionSchema);
+    if ('error' in validation) {
+      return validation.error;
+    }
+
     const {
       fullName,
       email,
-      temporaryPassword = 'Password@123',
+      temporaryPassword,
       storeId,
-      primaryRoleTitle = 'Senior Stylist',
-      assignedChair = 2,
-      chairStationName = 'Chair 02',
-      shiftDays = [1, 2, 3, 4, 5],
-      shiftStart = '09:00:00',
-      shiftEnd = '18:00:00',
-    } = body;
-
-    if (!fullName || !email || !storeId) {
-      return NextResponse.json({ error: 'Full name, email, and store are required' }, { status: 400 });
-    }
-
-    const normalizedEmail = String(email).toLowerCase().trim();
+      primaryRoleTitle,
+      assignedChair,
+      chairStationName,
+      shiftDays,
+      shiftStart,
+      shiftEnd,
+    } = validation.data;
 
     // 1. Transaction to provision staff without third-party email invites
     const result = await db.transaction(async (tx) => {
       // Create user or update existing
-      let [staffUser] = await tx.insert(users).values({
+      const [staffUser] = await tx.insert(users).values({
         tenantId,
-        email: normalizedEmail,
+        email,
         passwordHash: hashPassword(temporaryPassword),
-        fullName: String(fullName).trim(),
+        fullName,
         role: 'STAFF',
         isActive: true,
       }).onConflictDoUpdate({
@@ -52,7 +50,7 @@ export async function POST(request: Request) {
       }).returning();
 
       // Create staff profile
-      let [profile] = await tx.insert(staffProfiles).values({
+      const [profile] = await tx.insert(staffProfiles).values({
         userId: staffUser.id,
         tenantId,
         currentStoreId: storeId,
@@ -93,7 +91,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Staff member ${fullName} (${normalizedEmail}) provisioned successfully for ${chairStationName}. Zero invite email needed.`,
+      message: `Staff member ${fullName} (${email}) provisioned successfully for ${chairStationName}. Zero invite email needed.`,
       profileId: result.profile.id,
     });
   } catch (error) {

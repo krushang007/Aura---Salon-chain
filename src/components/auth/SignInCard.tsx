@@ -48,9 +48,10 @@ export function SignInCard({ onSubmit, isLoading = false, errorMessage, redirect
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Google OAuth error:', err);
-      toast.error(err?.message || 'Failed to initialize Google login', 'Google Sign-In Error');
+      const message = err instanceof Error ? err.message : 'Failed to initialize Google login';
+      toast.error(message, 'Google Sign-In Error');
       setIsGoogleLoading(false);
     }
   };

@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { appointments, appointmentAuditLogs, notifications } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth';
+import { validateRequestBody, bookingCancelSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
@@ -11,12 +12,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { appointmentId, reason } = body;
-
-    if (!appointmentId) {
-      return NextResponse.json({ error: 'appointmentId is required' }, { status: 400 });
+    const validation = await validateRequestBody(request, bookingCancelSchema);
+    if ('error' in validation) {
+      return validation.error;
     }
+
+    const { appointmentId, reason } = validation.data;
 
     // 1. Fetch appointment
     const apt = await db.query.appointments.findFirst({

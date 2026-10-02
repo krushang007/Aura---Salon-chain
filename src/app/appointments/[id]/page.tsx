@@ -61,9 +61,9 @@ export default function AppointmentPassPage({ params }: { params: { id: string }
             table: 'appointments',
             filter: `id=eq.${params.id}`,
           },
-          (payload: any) => {
+          (payload: { new?: Partial<AppointmentPassData> }) => {
             if (payload.new && payload.new.status) {
-              setPass((prev) => (prev ? { ...prev, status: payload.new.status } : null));
+              setPass((prev) => (prev ? { ...prev, status: payload.new!.status! } : null));
             }
           }
         )

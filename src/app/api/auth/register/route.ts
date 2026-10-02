@@ -3,24 +3,20 @@ import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { hashPassword, signSession, getSessionCookieName } from '@/lib/auth';
+import { validateRequestBody, registerSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { fullName, email, password, phone } = body;
-
-    if (!fullName || !email || !password) {
-      return NextResponse.json(
-        { error: 'Full name, email, and password are required' },
-        { status: 400 }
-      );
+    const validation = await validateRequestBody(request, registerSchema);
+    if ('error' in validation) {
+      return validation.error;
     }
 
-    const normalizedEmail = String(email).toLowerCase().trim();
+    const { fullName, email, password, phone } = validation.data;
 
     // Check if user already exists
     const existing = await db.query.users.findFirst({
-      where: eq(users.email, normalizedEmail),
+      where: eq(users.email, email),
     });
 
     if (existing) {
@@ -32,10 +28,10 @@ export async function POST(request: Request) {
 
     // Insert marketplace customer (tenantId = null)
     const [newUser] = await db.insert(users).values({
-      email: normalizedEmail,
-      fullName: String(fullName).trim(),
+      email,
+      fullName,
       passwordHash: hashPassword(password),
-      phone: phone ? String(phone).trim() : null,
+      phone: phone || null,
       role: 'CUSTOMER',
       tenantId: null, // open marketplace
       isActive: true,

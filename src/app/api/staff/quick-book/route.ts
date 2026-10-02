@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { db } from '@/db';
 import { users, appointments, appointmentAuditLogs, staffProfiles, services } from '@/db/schema';
-import { eq, or, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { getCurrentUser, hashPassword } from '@/lib/auth';
+import { validateRequestBody, staffQuickBookSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +13,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized staff access' }, { status: 403 });
     }
 
-    const body = await request.json();
+    const validation = await validateRequestBody(request, staffQuickBookSchema);
+    if ('error' in validation) {
+      return validation.error;
+    }
+
     const {
       storeId,
       staffId,
@@ -22,48 +28,48 @@ export async function POST(request: Request) {
       customerId,
       startTime,
       customerNotes,
-    } = body;
+    } = validation.data;
 
-    if (!storeId || !staffId || !serviceId || !customerFullName || !startTime) {
-      return NextResponse.json({ error: 'Missing required quick-book fields' }, { status: 400 });
-    }
-
-    const normalizedEmail = customerEmail ? String(customerEmail).trim().toLowerCase() : null;
-    const cleanPhone = customerPhone ? String(customerPhone).trim() : null;
-    const cleanName = String(customerFullName).trim();
+    const normalizedEmail = customerEmail || null;
+    const cleanPhone = customerPhone || null;
+    const cleanName = customerFullName;
 
     // 1. Resolve Customer Account
-    let customer: any = null;
+    let customer: typeof users.$inferSelect | null = null;
 
     // Check by explicitly provided customerId
     if (customerId) {
-      customer = await db.query.users.findFirst({
+      const found = await db.query.users.findFirst({
         where: eq(users.id, customerId),
       });
+      if (found) customer = found;
     }
 
     // Check by Email
     if (!customer && normalizedEmail) {
-      customer = await db.query.users.findFirst({
+      const found = await db.query.users.findFirst({
         where: eq(users.email, normalizedEmail),
       });
+      if (found) customer = found;
     }
 
     // Check by Phone
     if (!customer && cleanPhone) {
-      customer = await db.query.users.findFirst({
+      const found = await db.query.users.findFirst({
         where: eq(users.phone, cleanPhone),
       });
+      if (found) customer = found;
     }
 
-    // If client does not exist, auto-create customer account with their real contact details
+    // If client does not exist, auto-create customer account with secure random password
     if (!customer) {
-      const emailToUse = normalizedEmail || `walkin.${cleanPhone?.replace(/[^0-9]/g, '') || Date.now()}@aurasurat.in`;
+      const emailToUse = normalizedEmail || `walkin.${crypto.randomUUID().slice(0, 8)}@aurasurat.in`;
+      const randomSecret = crypto.randomBytes(16).toString('hex');
       const [newCustomer] = await db.insert(users).values({
         email: emailToUse,
         fullName: cleanName,
         phone: cleanPhone,
-        passwordHash: hashPassword('Walkin@123'),
+        passwordHash: hashPassword(randomSecret),
         role: 'CUSTOMER',
         tenantId: null,
         isActive: true,
@@ -129,9 +135,10 @@ export async function POST(request: Request) {
       },
       message: `Walk-in booking confirmed for ${cleanName}. Associated with client account ${customer.email}.`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Quick book error:', error);
-    if (error.code === '23P01') {
+    const pgError = error as { code?: string };
+    if (pgError.code === '23P01') {
       return NextResponse.json({ error: 'Chair or Stylist slot overlap collision on floor' }, { status: 409 });
     }
     return NextResponse.json({ error: 'Failed to create quick booking' }, { status: 500 });

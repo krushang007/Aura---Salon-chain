@@ -1,14 +1,24 @@
 'use client';
 
 import * as React from 'react';
-import { DailyRosterView, QuickWalkinModal } from '@/components/staff';
+import { DailyRosterView, QuickWalkinModal, type QuickWalkinInput, type RosterSlotBooking } from '@/components/staff';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/core';
 import { createClient } from '@/lib/supabase/client';
 
+interface RosterResponse {
+  storeId?: string;
+  staffId?: string;
+  stylistName?: string;
+  chairName?: string;
+  dateFormatted?: string;
+  bookings?: RosterSlotBooking[];
+  services?: Array<{ id: string; title: string; price: number; durationMinutes: number }>;
+}
+
 export default function StaffPortalPage() {
   const toast = useToast();
-  const [rosterData, setRosterData] = React.useState<any>(null);
+  const [rosterData, setRosterData] = React.useState<RosterResponse | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isQuickBookOpen, setIsQuickBookOpen] = React.useState(false);
 
@@ -76,7 +86,7 @@ export default function StaffPortalPage() {
     }
   };
 
-  const handleQuickBook = async (input: any) => {
+  const handleQuickBook = async (input: QuickWalkinInput) => {
     try {
       const res = await fetch('/api/staff/quick-book', {
         method: 'POST',

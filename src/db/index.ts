@@ -6,7 +6,10 @@ import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://salon_admin:Kaibil%40123@localhost:5432/kaibil';
+import { getServerEnv } from '@/lib/env';
+
+const env = getServerEnv();
+const connectionString = env.DATABASE_URL;
 
 // Connection pool configuration for Next.js App Router (handles connection re-use)
 declare global {

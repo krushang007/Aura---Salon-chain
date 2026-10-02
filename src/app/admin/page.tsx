@@ -25,10 +25,38 @@ import {
   Phone,
 } from 'lucide-react';
 
+export interface StoreItem {
+  id: string;
+  name: string;
+  totalStylingChairs?: number;
+  address?: string;
+  phone?: string;
+  locality?: string;
+  openingTime?: string;
+  closingTime?: string;
+  isActive?: boolean;
+  isPublished?: boolean;
+  servicesCount?: number;
+  staffCount?: number;
+}
+
+export interface SaveStoreData {
+  storeId: string;
+  branchName: string;
+  locality: string;
+  address: string;
+  phone: string;
+  totalStylingChairs: number;
+  openingTime: string;
+  closingTime: string;
+  isActive: boolean;
+  isPublished: boolean;
+}
+
 export default function AdminPortalPage() {
   const toast = useToast();
   const [staffList, setStaffList] = React.useState<StaffMember[]>([]);
-  const [stores, setStores] = React.useState<{ id: string; name: string; totalStylingChairs?: number; address?: string; phone?: string; locality?: string; openingTime?: string; closingTime?: string }[]>([]);
+  const [stores, setStores] = React.useState<StoreItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   // Modals state
@@ -37,7 +65,7 @@ export default function AdminPortalPage() {
   const [selectedStaffToEdit, setSelectedStaffToEdit] = React.useState<StaffMember | null>(null);
   const [isAddStoreOpen, setIsAddStoreOpen] = React.useState(false);
   const [isEditStoreOpen, setIsEditStoreOpen] = React.useState(false);
-  const [selectedStoreToEdit, setSelectedStoreToEdit] = React.useState<any>(null);
+  const [selectedStoreToEdit, setSelectedStoreToEdit] = React.useState<StoreItem | null>(null);
   const [isCloneModalOpen, setIsCloneModalOpen] = React.useState(false);
 
   const fetchData = React.useCallback(async () => {
@@ -146,7 +174,7 @@ export default function AdminPortalPage() {
     }
   };
 
-  const handleSaveStore = async (data: any) => {
+  const handleSaveStore = async (data: SaveStoreData) => {
     try {
       const res = await fetch('/api/admin/outlets', {
         method: 'PATCH',
@@ -349,10 +377,10 @@ export default function AdminPortalPage() {
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
-                      {(st as any).servicesCount !== undefined ? (st as any).servicesCount : 0} Services
+                      {st.servicesCount !== undefined ? st.servicesCount : 0} Services
                     </span>
                     <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-600">
-                      {(st as any).staffCount !== undefined ? (st as any).staffCount : 0} Stylists
+                      {st.staffCount !== undefined ? st.staffCount : 0} Stylists
                     </span>
                   </div>
                 </div>

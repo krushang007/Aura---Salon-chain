@@ -1,28 +1,24 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { db } from '@/db';
 import { tenants, stores, users, services, staffProfiles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { hashPassword, signSession, getSessionCookieName } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { validateRequestBody, partnerRegisterSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { salonName, ownerName, email, password, locality, address, phone, totalStylingChairs } = body;
-
-    if (!salonName || !ownerName || !email || !password || !locality) {
-      return NextResponse.json(
-        { error: 'Salon name, owner name, email, password, and locality are required.' },
-        { status: 400 }
-      );
+    const validation = await validateRequestBody(request, partnerRegisterSchema);
+    if ('error' in validation) {
+      return validation.error;
     }
 
-    const trimmedEmail = email.trim().toLowerCase();
+    const { salonName, ownerName, email, password, locality, address, phone, totalStylingChairs } = validation.data;
 
     // 1. Check existing user
     const existing = await db.query.users.findFirst({
-      where: eq(users.email, trimmedEmail),
+      where: eq(users.email, email),
     });
     if (existing) {
       return NextResponse.json(
@@ -31,52 +27,58 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Generate slug
+    // 2. Generate slug with collision-resistant UUID
     const baseSlug = salonName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const uniqueSlug = `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const uniqueSlug = `${baseSlug}-${crypto.randomUUID().slice(0, 8)}`;
 
     const defaultPasswordHash = hashPassword(password);
+
+    type ServiceCategory = typeof services.$inferSelect['category'];
 
     // 3. Create Tenant, Store & Admin User in Transaction
     const result = await db.transaction(async (tx) => {
       const [tenant] = await tx.insert(tenants).values({
-        name: salonName.trim(),
+        name: salonName,
         slug: uniqueSlug,
-        supportEmail: trimmedEmail,
-        supportPhone: phone || '+91 261 489 0000',
+        supportEmail: email,
+        supportPhone: phone || '+91 98250 12345',
         isActive: true,
       }).returning();
 
       const [adminUser] = await tx.insert(users).values({
         tenantId: tenant.id,
-        email: trimmedEmail,
-        fullName: ownerName.trim(),
-        phone: phone || null,
+        email,
+        fullName: ownerName,
         passwordHash: defaultPasswordHash,
         role: 'TENANT_ADMIN',
+        phone: phone || null,
         isActive: true,
       }).returning();
 
       const [store] = await tx.insert(stores).values({
         tenantId: tenant.id,
-        name: `${salonName.trim()} — ${locality} Branch`,
-        slug: `${baseSlug}-${locality.toLowerCase()}`,
-        city: 'Surat',
-        locality: locality.trim(),
-        address: address?.trim() || `Prime Location, ${locality}, Surat`,
-        phone: phone?.trim() || '+91 261 489 0000',
+        name: `${salonName} — ${locality}`,
+        slug: `${uniqueSlug}-main`,
+        locality,
+        address: address || `${locality}, Surat, Gujarat`,
+        phone: phone || '+91 98250 12345',
+        totalStylingChairs: totalStylingChairs || 5,
         openingTime: '09:00:00',
         closingTime: '21:00:00',
-        totalStylingChairs: Number(totalStylingChairs) || 5,
         isActive: true,
-        isPublished: true, // Auto-published upon onboarding
+        isPublished: true,
       }).returning();
 
-      // Auto-provision initial standard luxury services
-      const standardServices = [
-        { title: 'Signature Precision Haircut & Styling', category: 'HAIRCUT', durationMinutes: 45, bufferMinutes: 15, price: '850.00', description: 'Tailored consultation, precision shear architecture, wash and styling finish.' },
-        { title: 'Classic Hot Towel Shave & Beard Sculpt', category: 'SHAVE', durationMinutes: 30, bufferMinutes: 10, price: '450.00', description: 'Pre-shave essential oils, multi-pass straight razor finish, cold towel toner.' },
-        { title: 'Balayage & Hair Gloss Treatment', category: 'COLOR', durationMinutes: 90, bufferMinutes: 15, price: '2800.00', description: 'Sun-kissed hand-painted dimension, ammonia-free gloss and fiber seal.' },
+      const standardServices: {
+        title: string;
+        category: ServiceCategory;
+        durationMinutes: number;
+        bufferMinutes: number;
+        price: string;
+        description: string;
+      }[] = [
+        { title: 'Signature Haircut & Styling', category: 'HAIRCUT', durationMinutes: 45, bufferMinutes: 15, price: '650.00', description: 'Consultation, wash, signature cut and blowdry finishing.' },
+        { title: 'Beard Trim & Hot Towel Finish', category: 'SHAVE', durationMinutes: 30, bufferMinutes: 10, price: '350.00', description: 'Beard sculpting, razor outline and soothing hot towel wrap.' },
         { title: 'Botanical Scalp & Hair Spa', category: 'SPA', durationMinutes: 60, bufferMinutes: 15, price: '1500.00', description: 'Aromatherapy scalp massage, deep hydration masque, thermal steam infuse.' },
       ];
 
@@ -85,7 +87,7 @@ export async function POST(request: Request) {
           tenantId: tenant.id,
           storeId: store.id,
           title: s.title,
-          category: s.category as any,
+          category: s.category,
           durationMinutes: s.durationMinutes,
           bufferMinutes: s.bufferMinutes,
           price: s.price,
@@ -119,7 +121,15 @@ export async function POST(request: Request) {
       storeId: result.store.id,
     });
 
-    cookies().set(getSessionCookieName(), sessionToken, {
+    const response = NextResponse.json({
+      success: true,
+      message: 'Salon partner onboarding complete!',
+      redirectUrl: '/admin',
+    });
+
+    response.cookies.set({
+      name: getSessionCookieName(),
+      value: sessionToken,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -127,11 +137,7 @@ export async function POST(request: Request) {
       maxAge: 30 * 24 * 60 * 60,
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Salon partner onboarding complete!',
-      redirectUrl: '/admin',
-    });
+    return response;
   } catch (error) {
     console.error('Partner registration error:', error);
     return NextResponse.json({ error: 'Failed to onboard salon partner' }, { status: 500 });

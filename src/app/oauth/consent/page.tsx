@@ -45,16 +45,29 @@ export default async function OAuthConsentPage({
     redirect(`/login?redirect=/oauth/consent?authorization_id=${authorizationId}`);
   }
 
+  interface OAuthAuthorizationDetails {
+    authorization_id?: string;
+    redirect_url?: string;
+    redirect_uri?: string;
+    client?: { name?: string };
+    scope?: string;
+  }
+
   // Retrieve OAuth authorization details
-  let authDetails: any = null;
+  let authDetails: OAuthAuthorizationDetails | null = null;
   let authError: string | null = null;
 
   try {
-    const res = await (supabase.auth as any).oauth.getAuthorizationDetails(authorizationId);
-    authDetails = res.data;
-    authError = res.error?.message || null;
-  } catch (err: any) {
-    authError = err?.message || 'Failed to retrieve authorization details';
+    const authClient = supabase.auth as unknown as {
+      oauth?: {
+        getAuthorizationDetails: (id: string) => Promise<{ data?: OAuthAuthorizationDetails; error?: { message?: string } }>;
+      };
+    };
+    const res = await authClient.oauth?.getAuthorizationDetails(authorizationId);
+    authDetails = res?.data || null;
+    authError = res?.error?.message || null;
+  } catch (err: unknown) {
+    authError = err instanceof Error ? err.message : 'Failed to retrieve authorization details';
   }
 
   if (authError || !authDetails) {

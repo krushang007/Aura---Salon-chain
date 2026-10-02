@@ -3,24 +3,20 @@ import { db } from '@/db';
 import { users, staffProfiles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { verifyPassword, signSession, getSessionCookieName } from '@/lib/auth';
+import { validateRequestBody, loginSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
+    const validation = await validateRequestBody(request, loginSchema);
+    if ('error' in validation) {
+      return validation.error;
     }
 
-    const normalizedEmail = String(email).toLowerCase().trim();
+    const { email, password } = validation.data;
 
     // 1. Fetch user by email
     const user = await db.query.users.findFirst({
-      where: eq(users.email, normalizedEmail),
+      where: eq(users.email, email),
     });
 
     if (!user || !user.isActive) {

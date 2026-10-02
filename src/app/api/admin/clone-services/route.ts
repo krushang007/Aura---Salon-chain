@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { services } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth';
+import { validateRequestBody, cloneServicesSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
@@ -16,19 +17,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tenant context missing' }, { status: 400 });
     }
 
-    const body = await request.json();
-    const { sourceStoreId, targetStoreId } = body;
-
-    if (!sourceStoreId || !targetStoreId) {
-      return NextResponse.json({ error: 'sourceStoreId and targetStoreId are required' }, { status: 400 });
+    const validation = await validateRequestBody(request, cloneServicesSchema);
+    if ('error' in validation) {
+      return validation.error;
     }
+
+    const { sourceStoreId, targetStoreId } = validation.data;
 
     if (sourceStoreId === targetStoreId) {
       return NextResponse.json({ error: 'Source and target branches cannot be the same' }, { status: 400 });
     }
 
+    type ServiceCategory = typeof services.$inferSelect['category'];
+
     let servicesToClone: {
-      category: any;
+      category: ServiceCategory;
       title: string;
       description: string | null;
       durationMinutes: number;

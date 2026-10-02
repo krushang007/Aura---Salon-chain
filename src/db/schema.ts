@@ -199,12 +199,12 @@ export const staffLeaves = pgTable('staff_leaves', {
 
 export const appointments = pgTable('appointments', {
   id: uuid('id').defaultRandom().primaryKey(),
-  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
-  storeId: uuid('store_id').references(() => stores.id).notNull(),
-  staffId: uuid('staff_id').references(() => staffProfiles.id).notNull(),
-  customerId: uuid('customer_id').references(() => users.id).notNull(),
-  bookedByUserId: uuid('booked_by_user_id').references(() => users.id).notNull(),
-  serviceId: uuid('service_id').references(() => services.id).notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'restrict' }).notNull(),
+  storeId: uuid('store_id').references(() => stores.id, { onDelete: 'restrict' }).notNull(),
+  staffId: uuid('staff_id').references(() => staffProfiles.id, { onDelete: 'restrict' }).notNull(),
+  customerId: uuid('customer_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  bookedByUserId: uuid('booked_by_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  serviceId: uuid('service_id').references(() => services.id, { onDelete: 'restrict' }).notNull(),
   assignedChair: integer('assigned_chair').notNull(),
   slotRange: tstzrange('slot_range').notNull(),
   status: varchar('status', { length: 30 })

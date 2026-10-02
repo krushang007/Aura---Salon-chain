@@ -18,19 +18,32 @@ export interface SessionUser {
  */
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return `${salt}:${hash}`;
+  const iterations = 600000;
+  const hash = crypto.pbkdf2Sync(password, salt, iterations, 64, 'sha512').toString('hex');
+  return `${salt}:${iterations}:${hash}`;
 }
 
 export function verifyPassword(password: string, storedHash: string): boolean {
   if (!storedHash) return false;
-  // If legacy plain text / demo
-  if (!storedHash.includes(':')) {
-    return password === storedHash || password === 'Password@123';
+  // Reject legacy plaintext hashes — force password reset for these accounts
+  if (!storedHash.includes(':')) return false;
+
+  const parts = storedHash.split(':');
+  if (parts.length === 3) {
+    // Current format: salt:iterations:hash
+    const [salt, iterStr, key] = parts;
+    const iterations = Number(iterStr);
+    if (!iterations || iterations < 1) return false;
+    const hash = crypto.pbkdf2Sync(password, salt, iterations, 64, 'sha512').toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(key, 'hex'));
   }
-  const [salt, key] = storedHash.split(':');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return hash === key;
+  if (parts.length === 2) {
+    // Legacy format: salt:hash (1000 iterations) — still verifiable but new hashes use 600k
+    const [salt, key] = parts;
+    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(key, 'hex'));
+  }
+  return false;
 }
 
 /**

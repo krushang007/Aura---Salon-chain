@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { appointments, appointmentAuditLogs, notifications, staffProfiles, services } from '@/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { getCurrentUser } from '@/lib/auth';
+import { validateRequestBody, bookingRescheduleSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
@@ -11,15 +12,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { appointmentId, newDate, newSlotTime, newStaffId } = body;
-
-    if (!appointmentId || !newDate || !newSlotTime) {
-      return NextResponse.json(
-        { error: 'appointmentId, newDate, and newSlotTime are required' },
-        { status: 400 }
-      );
+    const validation = await validateRequestBody(request, bookingRescheduleSchema);
+    if ('error' in validation) {
+      return validation.error;
     }
+
+    const { appointmentId, newDate, newSlotTime, newStaffId } = validation.data;
 
     // 1. Fetch appointment
     const apt = await db.query.appointments.findFirst({
@@ -80,11 +78,17 @@ export async function POST(request: Request) {
     const totalMinutes = (service?.durationMinutes || 45) + (service?.bufferMinutes || 5);
     const startIso = `${newDate}T${newSlotTime}:00.000Z`;
     const startDate = new Date(startIso);
+
+    if (startDate < new Date()) {
+      return NextResponse.json({ error: 'Cannot reschedule to a past date or time' }, { status: 400 });
+    }
+
     const endDate = new Date(startDate.getTime() + totalMinutes * 60 * 1000);
 
     // 5. Update Appointment & Audit Log in transaction
     await db.transaction(async (tx) => {
-      await tx.update(appointments)
+      await tx
+        .update(appointments)
         .set({
           staffId: targetStaff.id,
           assignedChair: targetStaff.assignedChair,
@@ -96,7 +100,7 @@ export async function POST(request: Request) {
       await tx.insert(appointmentAuditLogs).values({
         appointmentId,
         action: 'RESCHEDULED',
-        actorRole: user.role === 'STAFF' ? 'STAFF' : user.role === 'TENANT_ADMIN' ? 'ADMIN' : 'CUSTOMER',
+        actorRole: user.role === 'TENANT_ADMIN' ? 'ADMIN' : user.role === 'STAFF' ? 'STAFF' : 'CUSTOMER',
         actorId: user.id,
         oldStatus: apt.status,
         newStatus: apt.status,
@@ -120,9 +124,10 @@ export async function POST(request: Request) {
       message: 'Appointment successfully rescheduled.',
       appointmentId,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Reschedule error:', error);
-    if (error.code === '23P01' || error.message?.includes('exclusion')) {
+    const pgError = error as { code?: string; message?: string };
+    if (pgError.code === '23P01' || pgError.message?.includes('exclusion')) {
       return NextResponse.json(
         { error: 'Slot conflict: The selected slot or stylist chair is already occupied. Please choose another slot.' },
         { status: 409 }

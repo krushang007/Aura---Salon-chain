@@ -16,6 +16,13 @@ export interface QuickWalkinModalProps {
   isLoading?: boolean;
 }
 
+interface ClientSearchResult {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string | null;
+}
+
 export function QuickWalkinModal({
   isOpen,
   onClose,
@@ -32,7 +39,7 @@ export function QuickWalkinModal({
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string | null>(null);
 
   // Client search results
-  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [searchResults, setSearchResults] = React.useState<ClientSearchResult[]>([]);
   const [isSearching, setIsSearching] = React.useState(false);
 
   const [serviceId, setServiceId] = React.useState(services[0]?.id || '');
@@ -65,7 +72,7 @@ export function QuickWalkinModal({
     }
   };
 
-  const handleSelectClient = (client: any) => {
+  const handleSelectClient = (client: ClientSearchResult) => {
     setSelectedCustomerId(client.id);
     setCustomerFullName(client.fullName);
     setCustomerEmail(client.email);
