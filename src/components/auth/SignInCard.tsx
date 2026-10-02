@@ -11,9 +11,10 @@ export interface SignInCardProps {
   onSubmit: (data: SignInFormData) => Promise<void>;
   isLoading?: boolean;
   errorMessage?: string | null;
+  redirectUrl?: string;
 }
 
-export function SignInCard({ onSubmit, isLoading = false, errorMessage }: SignInCardProps) {
+export function SignInCard({ onSubmit, isLoading = false, errorMessage, redirectUrl }: SignInCardProps) {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [rememberMe, setRememberMe] = React.useState(true);
@@ -28,10 +29,11 @@ export function SignInCard({ onSubmit, isLoading = false, errorMessage }: SignIn
     try {
       setIsGoogleLoading(true);
       const supabase = createClient();
+      const redirectParam = redirectUrl ? `?next=${encodeURIComponent(redirectUrl)}` : '';
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback${redirectParam}`,
         },
       });
 

@@ -276,7 +276,6 @@ export default function BookingPage({ params }: { params: { id: string } }) {
                   />
                 </div>
               </div>
-            </div>
 
               {/* Step 4: Special Request / Notes */}
               <div className="space-y-3">
@@ -291,6 +290,7 @@ export default function BookingPage({ params }: { params: { id: string } }) {
                   className="w-full rounded-xl border border-neutral-200 bg-white p-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:border-neutral-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-900"
                 />
               </div>
+            </div>
 
             {/* Right Summary Sticky Card */}
             <div className="lg:col-span-5">

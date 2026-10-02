@@ -25,28 +25,22 @@ export async function middleware(request: NextRequest) {
         },
         set(name: string, value: string, options: CookieOptions) {
           request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
           response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
           request.cookies.set({ name, value: '', ...options });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
           response.cookies.set({ name, value: '', ...options });
         },
       },
     }
   );
 
-  // Refresh auth token session
-  await supabase.auth.getUser();
+  // Refresh auth token session safely
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // Ignore refresh error
+  }
 
   return response;
 }
