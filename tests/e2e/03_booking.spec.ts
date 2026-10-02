@@ -13,7 +13,7 @@ test.describe('3. Booking Engine Suite — Slot Selection & Chair Guarantee', ()
 
   test('15: Booking page loads store details and physical chairs guarantee', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a:has-text("Book Appointment")').first().click();
+    await page.locator('a[href*="10f19971-98d2-4fd0-8f4f-a1f1abbad1b7"]').first().click();
     await page.waitForURL(/\/book\/.+/);
 
     await expect(page.locator('h1')).toContainText('Salon Bonanza');
@@ -25,7 +25,7 @@ test.describe('3. Booking Engine Suite — Slot Selection & Chair Guarantee', ()
 
   test('16: Stylist selection updates active stylist card and chair details', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a:has-text("Book Appointment")').first().click();
+    await page.locator('a[href*="10f19971-98d2-4fd0-8f4f-a1f1abbad1b7"]').first().click();
     await page.waitForURL(/\/book\/.+/);
 
     // Click on Rahul Mehta
@@ -37,7 +37,7 @@ test.describe('3. Booking Engine Suite — Slot Selection & Chair Guarantee', ()
 
   test('17: Service selection displays service duration and sanitization buffer', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a:has-text("Book Appointment")').first().click();
+    await page.locator('a[href*="10f19971-98d2-4fd0-8f4f-a1f1abbad1b7"]').first().click();
     await page.waitForURL(/\/book\/.+/);
 
     // Select service
@@ -48,7 +48,7 @@ test.describe('3. Booking Engine Suite — Slot Selection & Chair Guarantee', ()
 
   test('18: 15-Minute interval slots are generated for selected date', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a:has-text("Book Appointment")').first().click();
+    await page.locator('a[href*="10f19971-98d2-4fd0-8f4f-a1f1abbad1b7"]').first().click();
     await page.waitForURL(/\/book\/.+/);
 
     // Select stylist & service first
@@ -62,7 +62,7 @@ test.describe('3. Booking Engine Suite — Slot Selection & Chair Guarantee', ()
 
   test('19: Selecting an available slot updates booking summary breakdown', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a:has-text("Book Appointment")').first().click();
+    await page.locator('a[href*="10f19971-98d2-4fd0-8f4f-a1f1abbad1b7"]').first().click();
     await page.waitForURL(/\/book\/.+/);
 
     // Stylist & service
@@ -70,7 +70,7 @@ test.describe('3. Booking Engine Suite — Slot Selection & Chair Guarantee', ()
     await page.locator('button:has-text("Haircut")').first().click();
 
     // Pick first available slot
-    const firstAvailableSlot = page.locator('div.grid button:not([disabled]):has-text("AM"), div.grid button:not([disabled]):has-text("PM")').first();
+    const firstAvailableSlot = page.locator('div.grid button:not([disabled]):has-text("PM")').first();
     await firstAvailableSlot.click();
 
     // Summary card should show price
@@ -80,7 +80,7 @@ test.describe('3. Booking Engine Suite — Slot Selection & Chair Guarantee', ()
 
   test('20: Complete booking journey redirects to digital appointment pass', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a:has-text("Book Appointment")').first().click();
+    await page.locator('a[href*="10f19971-98d2-4fd0-8f4f-a1f1abbad1b7"]').first().click();
     await page.waitForURL(/\/book\/.+/);
 
     // Pick stylist, service, and pick a date in the future

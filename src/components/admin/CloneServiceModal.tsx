@@ -35,7 +35,7 @@ export function CloneServiceModal({
       isOpen={isOpen}
       onClose={onClose}
       maxWidth="md"
-      title="Clone Services Across Branches"
+      title="Clone Service Catalog Across Branches"
       description="Replicate your active haircut, spa, and treatment catalog from a template branch to a new outlet in Surat."
     >
       <form onSubmit={handleClone} className="space-y-4 pt-2">

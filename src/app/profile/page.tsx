@@ -108,7 +108,7 @@ export default function ProfilePage() {
                   {profile.fullName}
                 </h1>
                 <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-neutral-700 capitalize">
-                  {profile.role === 'TENANT_ADMIN' ? 'Salon Admin' : profile.role.toLowerCase()}
+                  {profile.role === 'TENANT_ADMIN' ? 'Salon Admin' : profile.role === 'CUSTOMER' ? 'Customer' : 'Staff'}
                 </span>
               </div>
               <p className="text-xs text-neutral-500 mt-1">{profile.email}</p>

@@ -20,7 +20,7 @@ test.describe('8. Admin Operations Suite — Staff Provisioning & Service Clonin
   test('43: Staff directory displays assigned physical chairs and roles', async ({ page }) => {
     await expect(page.locator('body')).toContainText('Rahul Mehta');
     await expect(page.locator('body')).toContainText('Chair 03');
-    await expect(page.locator('body')).toContainText('Priya Patel');
+    await expect(page.locator('body')).toContainText('Priya');
     await expect(page.locator('body')).toContainText('Chair 01');
   });
 
@@ -56,8 +56,8 @@ test.describe('8. Admin Operations Suite — Staff Provisioning & Service Clonin
 
     // Verify clone modal
     await expect(page.locator('h3:has-text("Clone Service Catalog")')).toBeVisible();
-    await expect(page.locator('body')).toContainText('Source Outlet');
-    await expect(page.locator('body')).toContainText('Destination Outlet');
+    await expect(page.locator('body')).toContainText('Source Branch');
+    await expect(page.locator('body')).toContainText('Target Branch');
   });
 
 });

@@ -59,7 +59,19 @@ export async function GET(request: Request) {
       };
     });
 
+    const storeServices = await db.query.services.findMany({
+      where: and(eq(services.storeId, staff.currentStoreId), eq(services.isActive, true)),
+    });
+
     return NextResponse.json({
+      storeId: staff.currentStoreId,
+      staffId: staff.id,
+      services: storeServices.map((srv) => ({
+        id: srv.id,
+        title: srv.title,
+        price: Number(srv.price),
+        durationMinutes: srv.durationMinutes,
+      })),
       stylistName: user.fullName,
       chairName: staff.chairStationName,
       branchName: staff.store.name,

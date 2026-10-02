@@ -29,6 +29,11 @@ export function QuickWalkinModal({
   const [customerFullName, setCustomerFullName] = React.useState('');
   const [customerPhone, setCustomerPhone] = React.useState('');
   const [serviceId, setServiceId] = React.useState(services[0]?.id || '');
+  React.useEffect(() => {
+    if (services.length > 0 && !serviceId) {
+      setServiceId(services[0].id);
+    }
+  }, [services, serviceId]);
   const [startTime, setStartTime] = React.useState(() => new Date().toISOString().slice(0, 16));
   const [customerNotes, setCustomerNotes] = React.useState('');
 
@@ -51,24 +56,24 @@ export function QuickWalkinModal({
       isOpen={isOpen}
       onClose={onClose}
       maxWidth="md"
-      title="Quick Walk-in & Phone Booking"
+      title="Quick Walk-in Booking"
       description={`Book immediate walk-in service directly for ${stylistName}.`}
     >
       <form onSubmit={handleSubmit} className="space-y-4 pt-2">
         <Input
-          label="Customer Full Name"
+          label="Client Full Name"
           value={customerFullName}
           onChange={(e) => setCustomerFullName(e.target.value)}
-          placeholder="e.g. Anand Patel"
+          placeholder="Client Full Name (e.g. Anand Patel)"
           required
         />
 
         <Input
-          label="Customer Mobile Number"
+          label="Mobile Number"
           type="tel"
           value={customerPhone}
           onChange={(e) => setCustomerPhone(e.target.value)}
-          placeholder="+91 98250 12345"
+          placeholder="Mobile Number (+91 98250 12345)"
           required
         />
 
@@ -107,7 +112,7 @@ export function QuickWalkinModal({
             isLoading={isLoading}
             leftIcon={<PlusCircle className="h-4 w-4" />}
           >
-            Lock Walk-in Seat
+            Confirm Walk-in
           </Button>
         </div>
       </form>

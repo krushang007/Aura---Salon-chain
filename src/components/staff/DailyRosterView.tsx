@@ -28,14 +28,14 @@ export function DailyRosterView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-200 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-display text-xl font-bold text-neutral-900">{stylistName}</span>
+            <h1 className="font-display text-xl font-bold text-neutral-900">Stylist Daily Roster: {stylistName}</h1>
             <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-semibold text-neutral-700">
               {chairName}
             </span>
           </div>
           <p className="text-xs text-neutral-500 flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5" />
-            {dateFormatted} • {bookings.length} scheduled services
+            Today Schedule • {dateFormatted} • {bookings.length} scheduled services
           </p>
         </div>
 

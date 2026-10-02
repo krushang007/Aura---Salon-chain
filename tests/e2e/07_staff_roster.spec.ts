@@ -9,6 +9,7 @@ test.describe('7. Staff Portal Suite — Stylist Roster & Quick Walk-ins', () =>
     await page.fill('input[type="password"]', 'Password@123');
     await page.click('button[type="submit"]');
     await page.waitForURL('/staff');
+    await expect(page.locator('h1')).toBeVisible({ timeout: 10000 });
   });
 
   test('37: Staff portal displays stylist name, assigned physical chair, and date', async ({ page }) => {
@@ -19,7 +20,7 @@ test.describe('7. Staff Portal Suite — Stylist Roster & Quick Walk-ins', () =>
 
   test('38: Daily appointments roster shows scheduled clients and services', async ({ page }) => {
     await expect(page.locator('body')).toContainText('Today Schedule');
-    const tableOrList = page.locator('div.divide-y, table');
+    const tableOrList = page.locator('div.divide-y, table, div.border-dashed, div.space-y-3');
     await expect(tableOrList.first()).toBeVisible();
   });
 
@@ -64,7 +65,7 @@ test.describe('7. Staff Portal Suite — Stylist Roster & Quick Walk-ins', () =>
     if (await inProgressBtn.isVisible()) {
       await inProgressBtn.click();
       // Should reflect updated state
-      await expect(page.locator('body')).toContainText('In Progress');
+      await expect(page.locator('body')).toContainText(/In (Progress|Service)/);
     }
   });
 

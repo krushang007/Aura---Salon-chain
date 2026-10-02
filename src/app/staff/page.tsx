@@ -116,14 +116,10 @@ export default function StaffPortalPage() {
         <QuickWalkinModal
           isOpen={isQuickBookOpen}
           onClose={() => setIsQuickBookOpen(false)}
-          storeId="althan-store"
-          staffId="staff-id"
-          stylistName={rosterData?.stylistName || 'Rahul Mehta'}
-          services={[
-            { id: 'srv-1', title: 'Signature Precision Haircut', price: 850, durationMinutes: 45 },
-            { id: 'srv-2', title: 'Classic Hot Towel Shave', price: 450, durationMinutes: 30 },
-            { id: 'srv-3', title: 'Botanical Scalp & Hair Spa', price: 1600, durationMinutes: 60 },
-          ]}
+          storeId={rosterData?.storeId || ""}
+          staffId={rosterData?.staffId || ""}
+          stylistName={rosterData?.stylistName || "Rahul Mehta"}
+          services={rosterData?.services || []}
           onSubmit={handleQuickBook}
         />
       </div>

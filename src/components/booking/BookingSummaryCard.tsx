@@ -64,6 +64,12 @@ export function BookingSummaryCard({
           </span>
         </div>
 
+        {/* Payment */}
+        <div className="flex items-center justify-between border-t border-neutral-200/60 pt-3">
+          <span className="text-neutral-500">Payment Method:</span>
+          <span className="font-semibold text-emerald-700">Pay at Salon Desk</span>
+        </div>
+
         {/* Date & Time */}
         <div className="flex items-center justify-between">
           <span className="text-neutral-500">Scheduled Time:</span>
@@ -96,7 +102,7 @@ export function BookingSummaryCard({
         onClick={onConfirm}
         rightIcon={<ArrowRight className="h-4 w-4" />}
       >
-        Confirm & Lock Slot (₹{service ? service.price : 0})
+        Confirm Guaranteed Booking
       </Button>
     </div>
   );

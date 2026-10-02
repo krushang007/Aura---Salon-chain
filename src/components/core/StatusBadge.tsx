@@ -22,7 +22,7 @@ export function StatusBadge({
     { label: string; variant: 'success' | 'warning' | 'destructive' | 'neutral' | 'outline' }
   > = {
     CONFIRMED: { label: 'Confirmed', variant: 'success' },
-    IN_PROGRESS: { label: 'In Service', variant: 'warning' },
+    IN_PROGRESS: { label: 'In Progress', variant: 'warning' },
     COMPLETED: { label: 'Completed', variant: 'neutral' },
     CANCELLED: { label: 'Cancelled', variant: 'destructive' },
     NO_SHOW: { label: 'No Show', variant: 'destructive' },

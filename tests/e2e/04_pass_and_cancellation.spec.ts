@@ -78,7 +78,7 @@ test.describe('4. Pass & Cancellation Suite — Digital Pass & 2-Hour Cutoff', (
   test('26: Self-service cancellation frees appointment when outside 2-hour window', async ({ page }) => {
     // Book a future appointment first to test cancellation
     await page.goto('/');
-    await page.locator('a:has-text("Book Appointment")').first().click();
+    await page.locator('a[href*="10f19971-98d2-4fd0-8f4f-a1f1abbad1b7"]').first().click();
     await page.waitForURL(/\/book\/.+/);
 
     await page.locator('button:has-text("Rahul Mehta")').first().click();

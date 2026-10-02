@@ -28,18 +28,26 @@ export function SignInCard({ onSubmit, isLoading = false, errorMessage }: SignIn
     try {
       setIsGoogleLoading(true);
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
+
       if (error) {
         console.error('Google OAuth error:', error);
+        alert(`Google Sign-In Error: ${error.message}`);
         setIsGoogleLoading(false);
+        return;
       }
-    } catch (err) {
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
       console.error('Google OAuth error:', err);
+      alert(`Google Sign-In Error: ${err?.message || 'Failed to initialize Google login'}`);
       setIsGoogleLoading(false);
     }
   };
@@ -68,6 +76,7 @@ export function SignInCard({ onSubmit, isLoading = false, errorMessage }: SignIn
           <div className="mt-6">
             <button
               type="button"
+              id="google-signin-btn"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading || isLoading}
               className="flex w-full items-center justify-center gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 shadow-xs hover:bg-neutral-50 hover:border-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed"

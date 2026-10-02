@@ -60,7 +60,7 @@ export function SalonCard({ store }: { store: SalonStoreSummary }) {
         <div className="mt-5">
           <Link href={`/book/${store.id}`}>
             <Button variant="primary" size="md" className="w-full" rightIcon={<ArrowRight className="h-4 w-4" />}>
-              View Slots & Stylists
+              Book Appointment
             </Button>
           </Link>
         </div>
