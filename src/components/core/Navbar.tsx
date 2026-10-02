@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 import { Bell, LogOut, User } from 'lucide-react';
 import { Button } from './Button';
 
@@ -41,23 +42,36 @@ export function Navbar({ user, unreadNotificationsCount: initialUnread = 0, onSi
       return;
     }
     try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {}
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+    try {
       await fetch('/api/auth/logout', { method: 'POST' });
-    } catch {
-      // Ignore
-    } finally {
-      window.location.href = '/login';
-    }
+    } catch {}
+    window.location.href = '/login';
   };
 
-  const navLinks = [
-    { href: '/', label: 'Explore Salons' },
-    { href: '/appointments', label: 'Appointments' },
-  ];
-
-  if (user?.role === 'STAFF') {
-    navLinks.push({ href: '/staff', label: 'Stylist Roster' });
-  } else if (user?.role === 'TENANT_ADMIN') {
-    navLinks.push({ href: '/admin', label: 'Admin Dashboard' });
+  let navLinks: { href: string; label: string }[] = [];
+  if (user?.role === 'TENANT_ADMIN') {
+    navLinks = [
+      { href: '/admin', label: 'Operations & Analytics' },
+      { href: '/admin#staff', label: 'Staff Roster' },
+      { href: '/admin#outlets', label: 'Outlets & Chairs' },
+    ];
+  } else if (user?.role === 'STAFF') {
+    navLinks = [
+      { href: '/staff', label: 'Stylist Roster' },
+      { href: '/appointments', label: 'Appointments' },
+    ];
+  } else {
+    navLinks = [
+      { href: '/', label: 'Explore Salons' },
+      { href: '/appointments', label: 'My Appointments' },
+    ];
   }
 
   return (

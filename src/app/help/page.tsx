@@ -40,14 +40,14 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     id: '3',
     category: 'booking',
-    question: 'What is the "0 Overbooking Guarantee"?',
-    answer: 'Unlike traditional salon software that double-books stylists across walk-ins and phone calls, Aura uses PostgreSQL GiST exclusion locks with microsecond accuracy. Each stylist is locked to a specific physical chair number (e.g. Chair 03 Wash Bay A) for the exact duration of your service plus sanitization buffer.',
+    question: 'What is the Guaranteed Chair Reservation policy?',
+    answer: 'Unlike traditional salon software that double-books stylists across walk-ins and phone calls, Aura guarantees that each client is assigned an exclusive physical chair station and stylist for their entire appointment window. Double-booking is strictly impossible on our platform.',
   },
   {
     id: '4',
     category: 'booking',
     question: 'Why is there a buffer time added to my appointment?',
-    answer: 'Every haircut, coloring, or spa service includes an automated 5 to 10-minute station sanitization and tool preparation buffer. This ensures your stylist is 100% prepared when you arrive without running behind schedule.',
+    answer: 'Every haircut, coloring, or spa service includes dedicated station cleaning and preparation time to ensure your stylist is ready when you arrive. This ensures your stylist is 100% prepared when you arrive without running behind schedule.',
   },
   {
     id: '5',

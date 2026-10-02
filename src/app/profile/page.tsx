@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, StatusBadge } from '@/components/core';
 import { User, Mail, Phone, ShieldCheck, LogOut, CheckCircle2, AlertCircle, Loader2, Calendar } from 'lucide-react';
@@ -75,12 +76,17 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {}
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+    try {
       await fetch('/api/auth/logout', { method: 'POST' });
-    } catch {
-      // Ignore
-    } finally {
-      window.location.href = '/login';
-    }
+    } catch {}
+    window.location.href = '/login';
   };
 
   if (isLoading) {

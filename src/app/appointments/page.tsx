@@ -4,10 +4,11 @@ import * as React from 'react';
 import Link from 'next/link';
 import { BookingHistoryList } from '@/components/appointments';
 import { BookingHistoryItem } from '@/components/appointments/types';
-import { Button } from '@/components/core';
+import { Button, useToast } from '@/components/core';
 import { Calendar, Loader2 } from 'lucide-react';
 
 export default function AppointmentsPage() {
+  const toast = useToast();
   const [upcoming, setUpcoming] = React.useState<BookingHistoryItem[]>([]);
   const [past, setPast] = React.useState<BookingHistoryItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -47,14 +48,14 @@ export default function AppointmentsPage() {
 
       const result = await res.json();
       if (!res.ok) {
-        alert(result.error || 'Cancellation failed');
+        toast.error(result.error || 'Cancellation failed', 'Cancellation Error');
         return;
       }
 
-      alert('Appointment cancelled successfully.');
+      toast.success('Appointment cancelled successfully.', 'Cancelled');
       fetchAppointments();
     } catch {
-      alert('Error cancelling appointment.');
+      toast.error('Error cancelling appointment. Please try again.', 'Network Error');
     }
   };
 

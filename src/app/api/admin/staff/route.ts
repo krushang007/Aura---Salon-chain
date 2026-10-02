@@ -2,8 +2,8 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { staffProfiles, stores, users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { getCurrentUser } from '@/lib/auth';
+import { eq, and } from 'drizzle-orm';
+import { getCurrentUser, hashPassword } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -46,10 +46,74 @@ export async function GET() {
 
     return NextResponse.json({
       staff: formatted,
-      stores: storeList.map((s) => ({ id: s.id, name: s.name })),
+      stores: storeList.map((s) => ({
+        id: s.id,
+        name: s.name,
+        totalStylingChairs: s.totalStylingChairs || 5,
+      })),
     });
   } catch (error) {
     console.error('Error fetching admin staff list:', error);
     return NextResponse.json({ error: 'Failed to fetch staff' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'TENANT_ADMIN' || !user.tenantId) {
+      return NextResponse.json({ error: 'Unauthorized salon admin access' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { staffId, fullName, title, assignedChair, storeId, newPassword, isActive } = body;
+
+    if (!staffId) {
+      return NextResponse.json({ error: 'Staff ID is required' }, { status: 400 });
+    }
+
+    const existingProfile = await db.query.staffProfiles.findFirst({
+      where: and(eq(staffProfiles.id, staffId), eq(staffProfiles.tenantId, user.tenantId)),
+      with: { user: true },
+    });
+
+    if (!existingProfile) {
+      return NextResponse.json({ error: 'Staff member profile not found' }, { status: 404 });
+    }
+
+    // 1. Update User Record (fullName, optional passwordHash, isActive)
+    const userUpdates: Record<string, any> = { updatedAt: new Date() };
+    if (fullName) userUpdates.fullName = fullName.trim();
+    if (typeof isActive === 'boolean') userUpdates.isActive = isActive;
+    if (newPassword && String(newPassword).length >= 6) {
+      userUpdates.passwordHash = hashPassword(String(newPassword));
+    }
+
+    await db.update(users).set(userUpdates).where(eq(users.id, existingProfile.userId));
+
+    // 2. Update Staff Profile (title, assignedChair, storeId)
+    const profileUpdates: Record<string, any> = { updatedAt: new Date() };
+    if (title) profileUpdates.title = title.trim();
+    if (assignedChair) {
+      profileUpdates.assignedChair = Number(assignedChair);
+      profileUpdates.chairStationName = `Chair ${String(assignedChair).padStart(2, '0')}`;
+    }
+    if (storeId) profileUpdates.currentStoreId = storeId;
+    if (typeof isActive === 'boolean') profileUpdates.isActive = isActive;
+
+    const [updatedStaff] = await db
+      .update(staffProfiles)
+      .set(profileUpdates)
+      .where(eq(staffProfiles.id, staffId))
+      .returning();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Staff profile updated successfully.',
+      staff: updatedStaff,
+    });
+  } catch (error) {
+    console.error('Error updating staff member:', error);
+    return NextResponse.json({ error: 'Failed to update staff member' }, { status: 500 });
   }
 }

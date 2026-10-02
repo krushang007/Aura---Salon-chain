@@ -3,9 +3,11 @@
 import * as React from 'react';
 import { DailyRosterView, QuickWalkinModal } from '@/components/staff';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/components/core';
 import { createClient } from '@/lib/supabase/client';
 
 export default function StaffPortalPage() {
+  const toast = useToast();
   const [rosterData, setRosterData] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isQuickBookOpen, setIsQuickBookOpen] = React.useState(false);
@@ -67,10 +69,10 @@ export default function StaffPortalPage() {
       if (res.ok) {
         fetchRoster();
       } else {
-        alert('Failed to update status');
+        toast.error('Failed to update appointment status', 'Update Error');
       }
     } catch {
-      alert('Error updating appointment status');
+      toast.error('Network error updating appointment status', 'Update Error');
     }
   };
 
@@ -82,14 +84,14 @@ export default function StaffPortalPage() {
         body: JSON.stringify(input),
       });
       if (res.ok) {
-        alert('Walk-in booking locked successfully!');
+        toast.success('Walk-in client successfully booked and station locked.', 'Walk-in Confirmed');
         fetchRoster();
       } else {
         const err = await res.json();
-        alert(err.error || 'Failed to book walk-in');
+        toast.error(err.error || 'Failed to book walk-in appointment', 'Walk-in Error');
       }
     } catch {
-      alert('Error booking walk-in appointment');
+      toast.error('Network error booking walk-in appointment', 'Walk-in Error');
     }
   };
 

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Button, Input } from '@/components/core';
+import { Button, Input, useToast } from '@/components/core';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { SignInFormData } from './types';
 import { createClient } from '@/lib/supabase/client';
@@ -15,6 +15,7 @@ export interface SignInCardProps {
 }
 
 export function SignInCard({ onSubmit, isLoading = false, errorMessage, redirectUrl }: SignInCardProps) {
+  const toast = useToast();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [rememberMe, setRememberMe] = React.useState(true);
@@ -39,7 +40,7 @@ export function SignInCard({ onSubmit, isLoading = false, errorMessage, redirect
 
       if (error) {
         console.error('Google OAuth error:', error);
-        alert(`Google Sign-In Error: ${error.message}`);
+        toast.error(error.message, 'Google Sign-In Error');
         setIsGoogleLoading(false);
         return;
       }
@@ -49,7 +50,7 @@ export function SignInCard({ onSubmit, isLoading = false, errorMessage, redirect
       }
     } catch (err: any) {
       console.error('Google OAuth error:', err);
-      alert(`Google Sign-In Error: ${err?.message || 'Failed to initialize Google login'}`);
+      toast.error(err?.message || 'Failed to initialize Google login', 'Google Sign-In Error');
       setIsGoogleLoading(false);
     }
   };
@@ -213,7 +214,7 @@ export function SignInCard({ onSubmit, isLoading = false, errorMessage, redirect
             <p className="text-sm font-semibold text-neutral-900">
               Salon Bonanza — Althan Branch, Surat
             </p>
-            <p className="text-xs text-neutral-500">4.9 ★ (142 reviews)</p>
+            <p className="text-xs text-neutral-500">Verified Atelier • Althan, Surat</p>
           </div>
 
           <div className="rounded-xl border border-neutral-200 bg-white p-3.5 space-y-2 shadow-xs">

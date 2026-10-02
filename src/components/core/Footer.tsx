@@ -35,7 +35,7 @@ export function Footer() {
           <div>
             Contact: <a href="mailto:contact@kaibuild.space" className="text-neutral-600 hover:text-neutral-900 underline">contact@kaibuild.space</a> | Sales: <a href="mailto:sales@kaibuild.space" className="text-neutral-600 hover:text-neutral-900 underline">sales@kaibuild.space</a>
           </div>
-          © {new Date().getFullYear()} Aura Technologies, Inc. All rights reserved. Zero calendar invites. Strictly in-app appointments.
+          © {new Date().getFullYear()} kaibuild.space. All rights reserved. Guaranteed salon chair reservations across Surat.
         </div>
       </div>
     </footer>

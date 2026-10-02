@@ -35,11 +35,43 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh auth token session safely
+  let user = null;
   try {
-    await supabase.auth.getUser();
+    const res = await supabase.auth.getUser();
+    user = res.data?.user;
   } catch {
     // Ignore refresh error
+  }
+
+  // Check Aura session token
+  const auraSessionToken = request.cookies.get('aura_session')?.value;
+  const pathname = request.nextUrl.pathname;
+
+  // If user is already authenticated and visits /login or /register, redirect to appropriate portal
+  if ((user || auraSessionToken) && (pathname === '/login' || pathname === '/register')) {
+    // Check if return redirect is specified
+    const redirectParam = request.nextUrl.searchParams.get('redirect') || request.nextUrl.searchParams.get('next');
+    if (redirectParam && redirectParam.startsWith('/') && redirectParam !== '/login') {
+      return NextResponse.redirect(new URL(redirectParam, request.url));
+    }
+
+    // Decode aura session payload if available to determine role
+    if (auraSessionToken) {
+      try {
+        const parts = auraSessionToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+          if (payload.role === 'TENANT_ADMIN') {
+            return NextResponse.redirect(new URL('/admin', request.url));
+          }
+          if (payload.role === 'STAFF') {
+            return NextResponse.redirect(new URL('/staff', request.url));
+          }
+        }
+      } catch {}
+    }
+
+    return NextResponse.redirect(new URL('/appointments', request.url));
   }
 
   return response;

@@ -164,7 +164,7 @@ export default function BookingPage({ params }: { params: { id: string } }) {
               </p>
             </div>
             <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-700 self-start sm:self-auto">
-              {store?.totalStylingChairs || 5} Active Chairs • 0 Overbooking Guarantee
+              {store?.totalStylingChairs || 5} Active Stations • Guaranteed Chair Reservation (0 Overbooking Guarantee)
             </span>
           </div>
         </div>
@@ -266,7 +266,7 @@ export default function BookingPage({ params }: { params: { id: string } }) {
                 <div className="space-y-2 pt-2">
                   <div className="flex items-center justify-between text-xs text-neutral-500">
                     <span>Available start intervals:</span>
-                    <span>5-minute station sanitization included</span>
+                    <span>Dedicated Station & Preparation Included</span>
                   </div>
                   <TimeSlotGrid
                     slots={availableSlots}

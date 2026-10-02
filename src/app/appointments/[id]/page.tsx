@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation';
 import { DigitalPassCard } from '@/components/appointments';
 import { AppointmentPassData } from '@/components/appointments/types';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Button, CalendarPicker, TimeSlotGrid, Modal, SlotItem } from '@/components/core';
+import { Button, CalendarPicker, TimeSlotGrid, Modal, SlotItem, useToast } from '@/components/core';
 import { createClient } from '@/lib/supabase/client';
 
 export default function AppointmentPassPage({ params }: { params: { id: string } }) {
+  const toast = useToast();
   const router = useRouter();
   const [pass, setPass] = React.useState<AppointmentPassData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -249,7 +250,7 @@ export default function AppointmentPassPage({ params }: { params: { id: string }
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-neutral-100 pt-4">
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-xs flex items-center justify-end gap-3 border-t border-neutral-100 pt-3 pb-1 mt-6">
               <Button
                 variant="ghost"
                 size="sm"
