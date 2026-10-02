@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: salon-postgres-dev
+    restart: always
+    environment:
+      POSTGRES_DB: kaibil
+      POSTGRES_USER: salon_admin
+      POSTGRES_PASSWORD: Kaibil@123
+    ports:
+      - "5432:5432"
+    volumes:
+      - salon_pgdata_dev:/var/lib/postgresql/data
+    networks:
+      - salon-network
+
+networks:
+  salon-network:
+    driver: bridge
+
+volumes:
+  salon_pgdata_dev:

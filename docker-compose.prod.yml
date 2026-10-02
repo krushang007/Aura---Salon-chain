@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    image: ${ECR_REGISTRY}/salon-booking-app:${APP_IMAGE_TAG:-latest}
+    container_name: salon-booking-app
+    restart: always
+    env_file: .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - salon-prod-network
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: salon-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-salon_booking}
+      POSTGRES_USER: ${POSTGRES_USER:-salon_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - salon_pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-salon_admin} -d ${POSTGRES_DB:-salon_booking}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - salon-prod-network
+
+networks:
+  salon-prod-network:
+    driver: bridge
+
+volumes:
+  salon_pgdata_prod:

@@ -1,0 +1,48 @@
+name: Continuous Integration (CI)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  test_and_lint:
+    name: Code Quality & Build Check
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          elif [ -f package.json ]; then
+            npm install
+          else
+            echo "package.json not yet created. Skipping dependency installation."
+          fi
+
+      - name: Run Linter
+        run: |
+          if grep -q '"lint"' package.json 2>/dev/null; then
+            npm run lint
+          else
+            echo "Lint script not configured yet in package.json."
+          fi
+
+      - name: Validate Production Build
+        run: |
+          if grep -q '"build"' package.json 2>/dev/null; then
+            npm run build
+          else
+            echo "Build script not configured yet in package.json."
+          fi
