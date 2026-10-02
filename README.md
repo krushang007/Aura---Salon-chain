@@ -15,6 +15,7 @@
 
 [Features](#-key-capabilities) •
 [Architecture](#-system-architecture) •
+[Design Patterns](#-software-design-patterns-applied) •
 [Quickstart](#-quickstart-guide) •
 [Demo Credentials](#-demo-accounts) •
 [Things to Remember](#-things-to-remember--critical-constraints) •
@@ -116,6 +117,30 @@ flowchart TD
     DrizzleORM --> PostgresDB
     PostgresDB --> GiSTConstraint
 ```
+
+### 🧩 Software Design Patterns Applied
+
+Aura's architecture applies battle-tested software engineering design patterns across the backend, data access, concurrency, security, and UI layers:
+
+#### 1. Architectural & Distributed Patterns
+* **Modular Monolith Pattern**: Co-locates the React Server Components frontend, REST Route Handlers, GraphQL Yoga server, and Drizzle ORM layer into a single unified deployment unit without microservice latency or orchestration overhead.
+* **Multi-Tenant Pattern (Shared Schema, Tenant-Partitioned Isolation)**: All primary domain models (`stores`, `services`, `staff`, `appointments`, `rosters`) are partitioned by `tenantId` with strict relational foreign keys and session context propagation (`x-tenant-slug`), guaranteeing tenant data isolation while maximizing cloud resource utilization.
+* **Dual API Gateway Pattern**: Dual exposure of business domain services via high-performance REST endpoints (`/api/booking/*`, `/api/admin/*`, `/api/staff/*`) and a unified GraphQL Schema (`/api/graphql` with GraphQL Yoga & Envelop plugins) sharing the identical Drizzle transaction layer.
+
+#### 2. Concurrency & Data Consistency Patterns
+* **Database Exclusion Lock / Range Guard Pattern (`btree_gist`)**: Replaces brittle application-level mutexes and Redis distributed locks with PostgreSQL native `tstzrange` and `EXCLUDE USING GIST` on `(store_id, assigned_chair, slot_range WITH &&)`. Slot collision checks are enforced atomically in the database engine using `[)` (half-open) time intervals with zero double-booking possibility.
+* **Unit of Work & ACID Transaction Pattern**: Multi-step business workflows—such as reservation creation, physical station locking, walk-in customer creation, and audit trail journaling—are executed within atomic database transactions (`db.transaction(async (tx) => ...)`) ensuring all-or-nothing execution with zero partial writes.
+* **Repository / Type-Safe Query Builder Pattern**: Drizzle ORM serves as the declarative data access layer, inferring TypeScript domain types (`$inferSelect`, `$inferInsert`) directly from the PostgreSQL schema, eliminating raw SQL string errors and ensuring compile-time type safety.
+
+#### 3. Security & Access Governance Patterns
+* **Role-Based Access Control (RBAC) Pattern**: Enforces strict privilege boundaries between `CUSTOMER`, `STAFF`, and `TENANT_ADMIN` across Next.js Edge Middleware (`src/middleware.ts`) and API Route Handlers.
+* **Stateless Cryptographic Token Pattern**: Session state is signed using HMAC-SHA256 tokens (`aura_session`) and stored in HTTP-only, `SameSite=Lax`, and `Secure` cookies with client-side secret decoupling.
+* **Proxy-Aware Forwarded Origin Resolver Pattern**: Dynamic resolution of incoming proxy headers (`x-forwarded-host`, `x-forwarded-proto`, `NEXTAUTH_URL`) ensures production redirects never default to internal container addresses (`localhost:3000`).
+
+#### 4. Behavioral & Reactive UI Patterns
+* **Audit Trail / Event Sourcing Pattern**: Every appointment state transition (`CREATED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `RESCHEDULED`) writes an immutable record to `appointmentAuditLogs` with actor identity, timestamp, and state diff for audit compliance.
+* **Observer / Pub-Sub Pattern (Real-Time Subscriptions)**: WebSockets via Supabase Realtime (`postgres_changes` on `appointments`) push live schedule and chair updates directly to active staff terminals without polling.
+* **Compound Component & Modal Viewport Ceiling Pattern**: Reusable UI components built with Radix primitives, Tailwind CSS design tokens, and viewport containment (`max-h-[90vh]` with sticky headers/footers) preventing mobile clipping.
 
 ---
 

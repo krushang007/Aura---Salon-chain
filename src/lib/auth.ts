@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 
-const AUTH_SECRET = process.env.AUTH_SECRET || 'aura-salon-surat-super-secure-jwt-secret-2026';
+const AUTH_SECRET = process.env.AUTH_SECRET || 'aaaa-aaaa-aaaa-aaaa-aaaa-aaaa-aaaa-aaaa';
 const COOKIE_NAME = 'aura_session';
 
 export interface SessionUser {
