@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+const isBuildTime =
+  process.env.NEXT_PHASE === 'phase-production-build' ||
+  process.env.npm_lifecycle_event === 'build' ||
+  process.env.CI === 'true' ||
+  process.env.GITHUB_ACTIONS === 'true';
+
 /**
  * Server-side environment validation schema.
  * Validated lazily on first access — fails fast with clear error messages.
@@ -21,12 +27,20 @@ let _validated: ServerEnv | null = null;
 
 /**
  * Returns validated server environment variables.
- * Throws on first call if any required variable is missing or invalid.
+ * Allows safe compilation during CI/build phase while strictly enforcing at runtime.
  */
 export function getServerEnv(): ServerEnv {
   if (_validated) return _validated;
 
-  const result = serverEnvSchema.safeParse(process.env);
+  const rawDbUrl = process.env.DATABASE_URL?.trim();
+  const dbUrlToValidate = rawDbUrl || (isBuildTime ? 'postgresql://build_placeholder:placeholder@localhost:5432/build_db' : '');
+
+  const envToParse = {
+    ...process.env,
+    DATABASE_URL: dbUrlToValidate,
+  };
+
+  const result = serverEnvSchema.safeParse(envToParse);
   if (!result.success) {
     const formatted = result.error.issues
       .map((issue) => `  ${issue.path.join('.')}: ${issue.message}`)

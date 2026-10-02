@@ -25,4 +25,7 @@ jobs:
         run: npm ci
 
       - name: Validate Production Build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://ci_runner:ci_runner@localhost:5432/ci_db' }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'aaaa-aaaa-aaaa-aaaa-aaaa-aaaa-aaaa-aaaa' }}
         run: npm run build
