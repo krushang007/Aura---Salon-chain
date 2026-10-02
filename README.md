@@ -118,29 +118,27 @@ flowchart TD
     PostgresDB --> GiSTConstraint
 ```
 
-### 🧩 Software Design Patterns Applied
+### 🧩 Software Design Patterns at a Glance
 
-Aura's architecture applies battle-tested software engineering design patterns across the backend, data access, concurrency, security, and UI layers:
+Aura's architecture applies battle-tested design patterns across data consistency, security, concurrency, and UI operations:
 
-#### 1. Architectural & Distributed Patterns
-* **Modular Monolith Pattern**: Co-locates the React Server Components frontend, REST Route Handlers, GraphQL Yoga server, and Drizzle ORM layer into a single unified deployment unit without microservice latency or orchestration overhead.
-* **Multi-Tenant Pattern (Shared Schema, Tenant-Partitioned Isolation)**: All primary domain models (`stores`, `services`, `staff`, `appointments`, `rosters`) are partitioned by `tenantId` with strict relational foreign keys and session context propagation (`x-tenant-slug`), guaranteeing tenant data isolation while maximizing cloud resource utilization.
-* **Dual API Gateway Pattern**: Dual exposure of business domain services via high-performance REST endpoints (`/api/booking/*`, `/api/admin/*`, `/api/staff/*`) and a unified GraphQL Schema (`/api/graphql` with GraphQL Yoga & Envelop plugins) sharing the identical Drizzle transaction layer.
+| Pattern | Category | Concrete Implementation in Codebase |
+| :--- | :--- | :--- |
+| **Exclusion Lock (`btree_gist`)** | Concurrency Guard | PostgreSQL `tstzrange` + `EXCLUDE USING GIST` on `(store_id, assigned_chair, slot_range WITH &&)` in [`schema.ts`](src/db/schema.ts) preventing physical chair double-booking. |
+| **Strategy Pattern** | Behavioral (GoF) | Dynamic notification message strategies by status (`IN_PROGRESS`, `COMPLETED`, `NO_SHOW`) in [`staff/update-status/route.ts`](src/app/api/staff/update-status/route.ts). |
+| **Observer / Pub-Sub** | Behavioral (GoF) | Supabase Realtime WebSocket listeners (`postgres_changes`) pushing live chair & appointment updates to [`appointments/[id]/page.tsx`](src/app/appointments/[id]/page.tsx). |
+| **Chain of Responsibility** | Behavioral (GoF) | Edge Middleware pipeline in [`middleware.ts`](src/middleware.ts): static bypass → origin resolution → HMAC verification → RBAC route protection. |
+| **Unit of Work / Command** | Behavioral (GoF) | Atomic multi-table database transactions (`db.transaction(tx)`) across booking, cancellation, rescheduling, and partner onboarding. |
+| **Adapter Pattern** | Structural (GoF) | Web Crypto API HMAC adapter in [`middleware.ts`](src/middleware.ts) adapting W3C crypto to Node `crypto` HMAC standards in V8 Edge Runtime. |
+| **Facade Pattern** | Structural (GoF) | Unified auth & cryptography facade in [`auth.ts`](src/lib/auth.ts) encapsulating PBKDF2 600k hashing, timing-safe checks, and HMAC JWT tokens. |
+| **Proxy / API Gateway** | Structural (GoF) | Next.js Edge Middleware intercepting all inbound requests for security headers, route shielding, and tenant scoping. |
+| **Decorator / Higher-Order** | Structural (GoF) | Reusable `validateRequestBody()` in [`validations.ts`](src/lib/validations.ts) decorating API routes with standard Zod schema parsing & 400 responses. |
+| **Singleton Pattern** | Creational (GoF) | Reusable database connection client (`globalThis.__dbClient`) in [`db/index.ts`](src/db/index.ts) preventing pool exhaustion across Next.js reloads. |
+| **Factory Method** | Creational (GoF) | Context-aware client instantiators `createClient()` (Supabase) and `createYoga()` / `createSchema()` (GraphQL). |
+| **Builder Pattern** | Creational (GoF) | Drizzle ORM fluent query builder chain (`db.select().from().where().orderBy().limit()`) inferring compile-time schema types. |
+| **Multi-Tenant Isolation** | Architectural | Shared-schema tenant-partitioned architecture with `tenantId` relational scoping across all tables and queries. |
+| **Compound Ownership (Anti-IDOR)** | Security Pattern | Multi-attribute predicates (`and(eq(id, ...), eq(ownerId, ...))`) eliminating horizontal privilege escalation in [`notifications`](src/app/api/notifications/route.ts) & [`staff`](src/app/api/staff/update-status/route.ts). |
 
-#### 2. Concurrency & Data Consistency Patterns
-* **Database Exclusion Lock / Range Guard Pattern (`btree_gist`)**: Replaces brittle application-level mutexes and Redis distributed locks with PostgreSQL native `tstzrange` and `EXCLUDE USING GIST` on `(store_id, assigned_chair, slot_range WITH &&)`. Slot collision checks are enforced atomically in the database engine using `[)` (half-open) time intervals with zero double-booking possibility.
-* **Unit of Work & ACID Transaction Pattern**: Multi-step business workflows—such as reservation creation, physical station locking, walk-in customer creation, and audit trail journaling—are executed within atomic database transactions (`db.transaction(async (tx) => ...)`) ensuring all-or-nothing execution with zero partial writes.
-* **Repository / Type-Safe Query Builder Pattern**: Drizzle ORM serves as the declarative data access layer, inferring TypeScript domain types (`$inferSelect`, `$inferInsert`) directly from the PostgreSQL schema, eliminating raw SQL string errors and ensuring compile-time type safety.
-
-#### 3. Security & Access Governance Patterns
-* **Role-Based Access Control (RBAC) Pattern**: Enforces strict privilege boundaries between `CUSTOMER`, `STAFF`, and `TENANT_ADMIN` across Next.js Edge Middleware (`src/middleware.ts`) and API Route Handlers.
-* **Stateless Cryptographic Token Pattern**: Session state is signed using HMAC-SHA256 tokens (`aura_session`) and stored in HTTP-only, `SameSite=Lax`, and `Secure` cookies with client-side secret decoupling.
-* **Proxy-Aware Forwarded Origin Resolver Pattern**: Dynamic resolution of incoming proxy headers (`x-forwarded-host`, `x-forwarded-proto`, `NEXTAUTH_URL`) ensures production redirects never default to internal container addresses (`localhost:3000`).
-
-#### 4. Behavioral & Reactive UI Patterns
-* **Audit Trail / Event Sourcing Pattern**: Every appointment state transition (`CREATED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `RESCHEDULED`) writes an immutable record to `appointmentAuditLogs` with actor identity, timestamp, and state diff for audit compliance.
-* **Observer / Pub-Sub Pattern (Real-Time Subscriptions)**: WebSockets via Supabase Realtime (`postgres_changes` on `appointments`) push live schedule and chair updates directly to active staff terminals without polling.
-* **Compound Component & Modal Viewport Ceiling Pattern**: Reusable UI components built with Radix primitives, Tailwind CSS design tokens, and viewport containment (`max-h-[90vh]` with sticky headers/footers) preventing mobile clipping.
 
 ---
 
